@@ -2,81 +2,157 @@ import * as React from 'react';
 import { 
   Box, 
   IconButton, 
+  Input, 
   Typography, 
-  Sheet, 
   Avatar, 
-  Menu, 
-  MenuItem, 
   Dropdown, 
-  MenuButton,
-  Divider
+  Menu, 
+  MenuButton, 
+  MenuItem, 
+  Divider,
+  Sheet,
+  Badge
 } from '@mui/joy';
-import {
-  Notifications as NotificationsIcon,
-  Menu as MenuIcon,
-  AccountCircle as AccountCircleIcon,
+import { 
+  Search as SearchIcon, 
+  Menu as MenuIcon, 
+  Notifications as NotificationsIcon, 
+  Mail as MailIcon,
+  ExpandMore as ExpandMoreIcon,
   Logout as LogoutIcon,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  Person as ProfileIcon
 } from '@mui/icons-material';
 
 interface HeaderProps {
-  title?: string;
-  onMenuToggle?: () => void;
-  showMenuButton?: boolean;
+  onSidebarToggle: () => void;
+  userName?: string;
+  userAvatar?: string;
+  onLogout?: () => void;
+  onProfileClick?: () => void;
+  onSettingsClick?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ 
-  title = 'ValvX Projektplattform', 
-  onMenuToggle,
-  showMenuButton = true
+const Header: React.FC<HeaderProps> = ({
+  onSidebarToggle,
+  userName = 'Användare',
+  userAvatar,
+  onLogout,
+  onProfileClick,
+  onSettingsClick
 }) => {
   return (
     <Sheet
+      variant="solid"
+      color="primary"
+      invertedColors
       sx={{
-        px: 2,
-        py: 1,
+        p: 2,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        borderBottom: '1px solid',
-        borderColor: 'divider',
+        height: 64,
+        zIndex: 1000,
         position: 'sticky',
         top: 0,
-        zIndex: 1100,
+        width: '100%',
       }}
     >
+      {/* Left side - Logo and menu toggle */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        {showMenuButton && (
-          <IconButton color="neutral" onClick={onMenuToggle}>
-            <MenuIcon />
-          </IconButton>
-        )}
-        <Typography level="title-lg">{title}</Typography>
+        <IconButton
+          variant="soft"
+          onClick={onSidebarToggle}
+          sx={{ display: { xs: 'flex', md: 'none' } }}
+        >
+          <MenuIcon />
+        </IconButton>
+        
+        <Typography level="title-lg" sx={{ fontWeight: 'bold', letterSpacing: 0.5 }}>
+          ValvX
+        </Typography>
       </Box>
       
+      {/* Center - Search */}
+      <Box 
+        sx={{ 
+          flexGrow: 1, 
+          display: { xs: 'none', md: 'flex' }, 
+          justifyContent: 'center',
+          mx: 2
+        }}
+      >
+        <Input
+          size="sm"
+          variant="outlined"
+          placeholder="Sök..."
+          startDecorator={<SearchIcon />}
+          sx={{
+            width: '100%',
+            maxWidth: 500,
+          }}
+        />
+      </Box>
+      
+      {/* Right side - User menu and notifications */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <IconButton variant="plain" color="neutral" size="sm">
-          <NotificationsIcon />
+        <IconButton variant="soft" size="sm">
+          <Badge badgeContent={3} color="danger">
+            <NotificationsIcon />
+          </Badge>
+        </IconButton>
+        
+        <IconButton variant="soft" size="sm">
+          <Badge badgeContent={5} color="danger">
+            <MailIcon />
+          </Badge>
         </IconButton>
         
         <Dropdown>
           <MenuButton
             slots={{ root: IconButton }}
-            slotProps={{ root: { variant: 'plain', color: 'neutral', size: 'sm' } }}
+            slotProps={{ root: { variant: 'plain' } }}
+            sx={{ 
+              display: 'flex', 
+              gap: 1.5, 
+              alignItems: 'center', 
+              px: 1,
+              '&:hover': {
+                bgcolor: 'primary.700'
+              }
+            }}
           >
-            <Avatar size="sm" src="" alt="User" />
+            <Avatar
+              size="sm"
+              src={userAvatar}
+              alt={userName}
+            >
+              {!userAvatar && userName.substring(0, 1).toUpperCase()}
+            </Avatar>
+            <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+              <Typography level="body-sm" textColor="inherit">
+                {userName}
+              </Typography>
+            </Box>
+            <ExpandMoreIcon sx={{ fontSize: 20 }} />
           </MenuButton>
-          <Menu placement="bottom-end">
-            <MenuItem>
-              <AccountCircleIcon />
+          <Menu 
+            placement="bottom-end"
+            sx={{ 
+              minWidth: 180,
+              zIndex: 1500
+            }}
+          >
+            <MenuItem onClick={onProfileClick}>
+              <ProfileIcon />
               Min profil
             </MenuItem>
-            <MenuItem>
+            <MenuItem onClick={onSettingsClick}>
               <SettingsIcon />
               Inställningar
             </MenuItem>
             <Divider />
-            <MenuItem color="danger">
+            <MenuItem color="danger" onClick={onLogout}>
               <LogoutIcon />
               Logga ut
             </MenuItem>

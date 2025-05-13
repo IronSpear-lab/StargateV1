@@ -11,7 +11,6 @@ import {
   IconButton
 } from '@mui/joy';
 import {
-  Assignment as TaskIcon,
   ArrowForward as ArrowIcon,
   CheckCircle as CompletedIcon,
   RadioButtonUnchecked as TodoIcon,

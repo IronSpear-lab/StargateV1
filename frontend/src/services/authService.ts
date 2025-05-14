@@ -1,4 +1,3 @@
-import axios from 'axios';
 import apiService from './api';
 import { User, ApiResponse } from '../types';
 
@@ -28,66 +27,63 @@ const authService = {
     console.log('Attempting login with:', { email: data.email, passwordLength: data.password.length });
     
     try {
-      // Använd vår apiService för att göra anropet, vilket går via Vite-proxyn
-      const response = await axios.post('/api/token/', data, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        withCredentials: true
-      });
+      // Använd vanlig apiService istället för axios direkt
+      const response = await apiService.post<{ access: string, refresh: string }>('/token/', data);
       
-      console.log('Login successful, response:', response.status);
+      console.log('Login response:', response);
       
-      // Extrahera data
-      const responseData = response.data;
-      
-      // Spara tokens i localStorage
-      localStorage.setItem('token', responseData.access);
-      localStorage.setItem('refreshToken', responseData.refresh);
-      
-      // Simulera ett user-objekt eftersom API:et inte returnerar det
-      // Detta fixar vi längre fram, men gör att inloggningen fungerar för nu
-      const userResponse = {
-        access: responseData.access,
-        refresh: responseData.refresh,
-        user: {
-          id: 1,
-          email: data.email,
-          username: data.email.split('@')[0],
-          first_name: '',
-          last_name: ''
-        }
-      };
-      
-      return {
-        status: response.status,
-        data: userResponse,
-        message: 'Login successful'
-      };
+      if (response.status === 200 && response.data) {
+        // Spara tokens i localStorage
+        localStorage.setItem('token', response.data.access);
+        localStorage.setItem('refreshToken', response.data.refresh);
+        
+        // Simulera ett user-objekt eftersom API:et inte returnerar det
+        // Detta fixar vi längre fram, men gör att inloggningen fungerar för nu
+        const userResponse = {
+          access: response.data.access,
+          refresh: response.data.refresh,
+          user: {
+            id: 1,
+            email: data.email,
+            username: data.email.split('@')[0],
+            first_name: '',
+            last_name: ''
+          }
+        };
+        
+        return {
+          status: response.status,
+          data: userResponse,
+          message: 'Login successful'
+        };
+      } else {
+        throw new Error('Ogiltig respons från servern');
+      }
     } catch (error: any) {
-      console.error('Login error:', error.response || error);
+      console.error('Login error:', error);
       
       // Format error message
       let errorMessage = 'Inloggning misslyckades';
       
       if (error.response) {
-        // Handle API error responses
         const status = error.response.status;
-        const data = error.response.data;
         
         if (status === 401) {
           errorMessage = 'Fel e-post eller lösenord';
-        } else if (data && data.detail) {
-          errorMessage = data.detail;
-        } else if (typeof data === 'object') {
-          errorMessage = Object.values(data).flat().join(', ');
+        } else if (error.response.data) {
+          if (typeof error.response.data.detail === 'string') {
+            errorMessage = error.response.data.detail;
+          } else if (typeof error.response.data === 'object') {
+            try {
+              errorMessage = Object.values(error.response.data).flat().join(', ');
+            } catch (e) {
+              // Fallback if we can't extract details
+              errorMessage = `Error ${status}: ${JSON.stringify(error.response.data)}`;
+            }
+          }
         }
-      } else if (error.request) {
-        // The request was made but no response was received
-        errorMessage = 'Ingen respons från servern';
-      } else {
-        // Something happened in setting up the request
-        errorMessage = error.message || 'Ett oväntat fel inträffade';
+      } else if (error.message) {
+        errorMessage = error.message;
       }
       
       return {

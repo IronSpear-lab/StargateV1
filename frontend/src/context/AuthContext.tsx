@@ -78,44 +78,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
       
+      console.log('Initiating login from AuthContext');
       const response = await authService.login({ email, password });
+      console.log('Login response in AuthContext:', response);
       
       if (response.status === 200 && response.data) {
-        // Spara tokens
-        const { access, refresh } = response.data;
-        localStorage.setItem('token', access);
-        localStorage.setItem('refreshToken', refresh);
+        // Om vi fick en användare från API:et använder vi den, annars använder vi den simulerade
+        const user = response.data.user;
         
-        // Hämta användarinformation
-        try {
-          const userResponse = await authService.getCurrentUser();
-          
-          if (userResponse.status === 200 && userResponse.data) {
-            setState({
-              user: userResponse.data,
-              token: access,
-              refreshToken: refresh,
-              isAuthenticated: true,
-              isLoading: false,
-              error: null,
-            });
-            return true;
-          } else {
-            throw new Error(userResponse.message || 'Failed to get user data');
-          }
-        } catch (userError) {
-          console.error('Failed to fetch user data after login:', userError);
-          setState({
-            user: null,
-            token: access,
-            refreshToken: refresh,
-            isAuthenticated: true,
-            isLoading: false,
-            error: null,
-          });
-          // Trots allt returnera framgång eftersom autentiseringen faktiskt lyckades
-          return true;
-        }
+        setState({
+          user: user,
+          token: response.data.access,
+          refreshToken: response.data.refresh,
+          isAuthenticated: true,
+          isLoading: false,
+          error: null,
+        });
+        
+        return true;
       } else {
         setState(prev => ({
           ...prev,
@@ -125,6 +105,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return false;
       }
     } catch (error) {
+      console.error('Auth context login error:', error);
       setState(prev => ({
         ...prev,
         isLoading: false,

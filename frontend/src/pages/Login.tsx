@@ -71,6 +71,15 @@ const Login: React.FC = () => {
             </Alert>
           )}
           
+          {/* Debug info in development */}
+          {process.env.NODE_ENV !== 'production' && (
+            <Alert color="neutral" variant="soft" sx={{ mb: 3, p: 1, fontSize: 'xs' }}>
+              <Typography level="body-xs">DEBUG: Använd:</Typography>
+              <Typography level="body-xs">Email: admin@valvx.com</Typography>
+              <Typography level="body-xs">Lösenord: Admin123!</Typography>
+            </Alert>
+          )}
+          
           <form onSubmit={handleSubmit}>
             <FormControl sx={{ mb: 2 }}>
               <FormLabel>E-post</FormLabel>

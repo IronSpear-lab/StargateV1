@@ -5,13 +5,18 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   server: {
-    host: '0.0.0.0',
+    host: '0.0.0.0', // Aktiverar alla nätverksinterface
     port: 5000,
     strictPort: true,
     hmr: {
       clientPort: 443 // Use 443 for HTTPS or 80 for HTTP
     },
     cors: true,
-    allowedHosts: 'all' // Tillåt alla hosts (användbart i Replit eller andra molntjänster med dynamiska domäner)
+    allowedHosts: [
+      'c1887eca-4b64-4645-87a5-8b72c350b2cd-00-1tfkofdiqni22.kirk.replit.dev', 
+      'localhost', 
+      '.replit.dev',
+      '.repl.co'
+    ]
   }
 });

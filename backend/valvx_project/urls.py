@@ -1,36 +1,44 @@
 """
-URL configuration for valvx_project project.
+URL Configuration for valvx_project.
 """
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from django.http import HttpResponse
+from rest_framework import routers
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
+    TokenVerifyView,
 )
+from django.http import JsonResponse
+
+# Router för API
+router = routers.DefaultRouter()
+
+# Health check endpoint
+def status_view(request):
+    return JsonResponse({"status": "ok"})
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # API endpoints
-    path('api/', include([
-        # JWT Authentication
-        path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-        path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-        
-        # Status endpoint
-        path('status/', lambda request: HttpResponse(b'{"status": "ok"}', content_type='application/json')),
-        
-        # App routes
-        path('', include('core.urls')),
-        path('files/', include('files.urls')),
-        path('wiki/', include('wiki.urls')),
-        path('notifications/', include('notifications.urls')),
-    ])),
+    
+    # API-endpoint för status
+    path('api/status/', status_view, name='api-status'),
+    
+    # JWT autentisering
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
+    
+    # Inkludera API routes
+    path('api/', include(router.urls)),
+    
+    # Inkludera app-specifika URLs
+    path('api/', include('core.urls')),
+    path('api/', include('files.urls')),
 ]
 
-# Add static and media URLs in development
+# Lägg till media URL under utveckling
 if settings.DEBUG:
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

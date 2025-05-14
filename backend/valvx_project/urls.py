@@ -7,10 +7,10 @@ from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework import routers
 from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
     TokenRefreshView,
     TokenVerifyView,
 )
+from core.views import EmailTokenObtainPairView
 from django.http import JsonResponse
 
 # Router för API
@@ -27,7 +27,7 @@ urlpatterns = [
     path('api/status/', status_view, name='api-status'),
     
     # JWT autentisering
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/', EmailTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
     

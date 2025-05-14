@@ -1,11 +1,25 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import User, Project, Task, RoleAccess, TimeReport
 from .serializers import (
     UserSerializer, UserCreateSerializer, ProjectSerializer,
     TaskSerializer, RoleAccessSerializer, TimeReportSerializer
 )
+
+class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """
+    Custom token serializer that uses email instead of username
+    """
+    username_field = User.USERNAME_FIELD
+
+class EmailTokenObtainPairView(TokenObtainPairView):
+    """
+    Custom token view that uses EmailTokenObtainPairSerializer
+    """
+    serializer_class = EmailTokenObtainPairSerializer
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
     """

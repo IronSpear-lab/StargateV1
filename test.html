@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ValvX Test Page</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .card {
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .success {
+      color: green;
+    }
+    .error {
+      color: red;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <h1>ValvX Plattform Test</h1>
+  
+  <div class="card">
+    <h2>1. API Status Test</h2>
+    <p>Test av <code>/api/status/</code> endpoint:</p>
+    <div id="api-status-result">Klicka på "Testa" för att kontrollera API-status</div>
+    <button onclick="testApiStatus()">Testa</button>
+  </div>
+  
+  <div class="card">
+    <h2>2. Frontend Komponentöversikt</h2>
+    <p>Vi har implementerat följande komponenter:</p>
+    <ul>
+      <li>Dashboard (StatCard, ProjectCard, TaskList)</li>
+      <li>Kalender (MonthCalendar, EventList)</li>
+      <li>Anslagstavla (MessageBoard, MessageCard)</li>
+      <li>Layoutkomponenter (Header, Sidebar, Layout)</li>
+      <li>Autentisering (Login, Register)</li>
+    </ul>
+  </div>
+  
+  <div class="card">
+    <h2>3. Backend API:er</h2>
+    <p>API-endpoints implementerade:</p>
+    <ul>
+      <li>/api/status/ - Statuskontroll</li>
+      <li>/api/token/ - JWT-autentisering</li>
+      <li>/api/token/refresh/ - Förnya JWT-token</li>
+      <li>/api/token/verify/ - Verifiera JWT-token</li>
+      <li>/api/users/ - Användarhantering</li>
+      <li>/api/projects/ - Projekthantering</li>
+      <li>/api/tasks/ - Uppgiftshantering</li>
+    </ul>
+  </div>
+
+  <script>
+    async function testApiStatus() {
+      const resultElement = document.getElementById('api-status-result');
+      resultElement.textContent = 'Kontaktar API...';
+      
+      try {
+        const response = await fetch('http://localhost:8001/api/status/');
+        const data = await response.json();
+        
+        if (data.status === 'ok') {
+          resultElement.className = 'success';
+          resultElement.textContent = '✅ API:et svarar korrekt: ' + JSON.stringify(data);
+        } else {
+          resultElement.className = 'error';
+          resultElement.textContent = '❌ Oväntat svar: ' + JSON.stringify(data);
+        }
+      } catch (error) {
+        resultElement.className = 'error';
+        resultElement.textContent = '❌ Kunde inte nå API:et: ' + error.message;
+      }
+    }
+  </script>
+</body>
+</html>

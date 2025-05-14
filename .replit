@@ -20,6 +20,10 @@ args = "frontend"
 task = "workflow.run"
 args = "backend"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "testserver"
+
 [[workflows.workflow]]
 name = "frontend"
 author = "agent"
@@ -38,8 +42,21 @@ task = "shell.exec"
 args = "cd backend && python manage.py runserver 0.0.0.0:8001"
 waitForPort = 8001
 
+[[workflows.workflow]]
+name = "testserver"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd $(pwd) && python -m http.server 3000"
+waitForPort = 3000
+
 [deployment]
 run = ["sh", "-c", "cd frontend && npm install @mui/joy @emotion/react @emotion/styled @mui/material react-router-dom axios && npm install -g vite && vite --port 5000 && cd ../backend && pip install django djangorestframework django-cors-headers djangorestframework-simplejwt dj-database-url pillow && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
+
+[[ports]]
+localPort = 3000
+externalPort = 3002
 
 [[ports]]
 localPort = 5000

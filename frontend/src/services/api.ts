@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { ApiResponse, PaginatedResponse } from '../types';
 
-// API-basulen - anpassa denna baserat på miljö
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001/api';
+// API-basurl - använd relativ URL för att använda Vite-proxyn i Replit-miljön
+const API_URL = '/api';
 
 // Skapa en Axios-instans med basinställningar
 const api = axios.create({

@@ -12,7 +12,8 @@ export default defineConfig({
       clientPort: 443 // Use 443 for HTTPS or 80 for HTTP
     },
     cors: true,
-    allowedHosts: 'all', // Tillåt alla domäner för enklare hantering i Replit
+    // Tillåt alla domäner för enklare hantering i Replit
+    allowedHosts: ['.replit.dev', '.repl.co', 'localhost'],
     proxy: {
       // Ställ in proxy för API-anrop för att undvika CORS-problem
       '/api': {

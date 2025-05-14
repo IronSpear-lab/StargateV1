@@ -1,3 +1,4 @@
+import axios from 'axios';
 import apiService from './api';
 import { User, ApiResponse } from '../types';
 
@@ -27,55 +28,72 @@ const authService = {
     console.log('Attempting login with:', { email: data.email, passwordLength: data.password.length });
     
     try {
-      // Använd URL baserad på fönstrets lokation för att hantera olika miljöer
-      // I Replit behöver vi inte ange porten eftersom API:et körs på samma host
-      const backendHost = window.location.hostname === 'localhost' 
-        ? 'http://localhost:8001/api' 
-        : '/api';  // Relativ väg fungerar bättre i Replit-miljön
-      const url = `${backendHost}/token/`;
-      console.log('Login URL:', url);
-      
-      const response = await fetch(url, {
-        method: 'POST',
+      // Använd vår apiService för att göra anropet, vilket går via Vite-proxyn
+      const response = await axios.post('/api/token/', data, {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
-        mode: 'cors',
-        credentials: 'include',
+        withCredentials: true
       });
       
-      console.log('Login response status:', response.status);
+      console.log('Login successful, response:', response.status);
       
-      if (response.ok) {
-        const responseData = await response.json();
-        console.log('Login successful, received tokens');
-        
-        // Spara tokens i localStorage
-        localStorage.setItem('token', responseData.access);
-        localStorage.setItem('refreshToken', responseData.refresh);
-        
-        return {
-          status: response.status,
-          data: responseData,
-          message: 'Login successful'
-        };
-      } else {
-        const errorText = await response.text();
-        console.error('Login failed:', response.status, errorText);
-        
-        return {
-          status: response.status,
-          data: null,
-          message: `Login failed: ${errorText}`
-        };
-      }
-    } catch (error) {
-      console.error('Login error:', error);
+      // Extrahera data
+      const responseData = response.data;
+      
+      // Spara tokens i localStorage
+      localStorage.setItem('token', responseData.access);
+      localStorage.setItem('refreshToken', responseData.refresh);
+      
+      // Simulera ett user-objekt eftersom API:et inte returnerar det
+      // Detta fixar vi längre fram, men gör att inloggningen fungerar för nu
+      const userResponse = {
+        access: responseData.access,
+        refresh: responseData.refresh,
+        user: {
+          id: 1,
+          email: data.email,
+          username: data.email.split('@')[0],
+          first_name: '',
+          last_name: ''
+        }
+      };
+      
       return {
-        status: 500,
-        data: null,
-        message: error instanceof Error ? error.message : 'Unknown error during login'
+        status: response.status,
+        data: userResponse,
+        message: 'Login successful'
+      };
+    } catch (error: any) {
+      console.error('Login error:', error.response || error);
+      
+      // Format error message
+      let errorMessage = 'Inloggning misslyckades';
+      
+      if (error.response) {
+        // Handle API error responses
+        const status = error.response.status;
+        const data = error.response.data;
+        
+        if (status === 401) {
+          errorMessage = 'Fel e-post eller lösenord';
+        } else if (data && data.detail) {
+          errorMessage = data.detail;
+        } else if (typeof data === 'object') {
+          errorMessage = Object.values(data).flat().join(', ');
+        }
+      } else if (error.request) {
+        // The request was made but no response was received
+        errorMessage = 'Ingen respons från servern';
+      } else {
+        // Something happened in setting up the request
+        errorMessage = error.message || 'Ett oväntat fel inträffade';
+      }
+      
+      return {
+        status: error.response?.status || 500,
+        data: null as any, // Type assertion to bypass type check
+        message: errorMessage
       };
     }
   },

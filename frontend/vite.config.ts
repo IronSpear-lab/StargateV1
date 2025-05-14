@@ -12,11 +12,15 @@ export default defineConfig({
       clientPort: 443 // Use 443 for HTTPS or 80 for HTTP
     },
     cors: true,
-    allowedHosts: [
-      'c1887eca-4b64-4645-87a5-8b72c350b2cd-00-1tfkofdiqni22.kirk.replit.dev', 
-      'localhost', 
-      '.replit.dev',
-      '.repl.co'
-    ]
+    allowedHosts: 'all', // Tillåt alla domäner för enklare hantering i Replit
+    proxy: {
+      // Ställ in proxy för API-anrop för att undvika CORS-problem
+      '/api': {
+        target: 'http://localhost:8001',
+        changeOrigin: true,
+        secure: false,
+        ws: true,
+      }
+    }
   }
 });

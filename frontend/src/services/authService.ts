@@ -24,15 +24,60 @@ interface LoginData {
 const authService = {
   // Login-funktion
   async login(data: LoginData): Promise<ApiResponse<LoginResponse>> {
-    const response = await apiService.post<LoginResponse>('/token/', data);
+    console.log('Attempting login with:', { email: data.email, passwordLength: data.password.length });
     
-    if (response.status === 200 && response.data) {
-      // Spara tokens i localStorage
-      localStorage.setItem('token', response.data.access);
-      localStorage.setItem('refreshToken', response.data.refresh);
+    try {
+      // Använd URL baserad på fönstrets lokation för att hantera olika miljöer
+      // I Replit behöver vi inte ange porten eftersom API:et körs på samma host
+      const backendHost = window.location.hostname === 'localhost' 
+        ? 'http://localhost:8001/api' 
+        : '/api';  // Relativ väg fungerar bättre i Replit-miljön
+      const url = `${backendHost}/token/`;
+      console.log('Login URL:', url);
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+        mode: 'cors',
+        credentials: 'include',
+      });
+      
+      console.log('Login response status:', response.status);
+      
+      if (response.ok) {
+        const responseData = await response.json();
+        console.log('Login successful, received tokens');
+        
+        // Spara tokens i localStorage
+        localStorage.setItem('token', responseData.access);
+        localStorage.setItem('refreshToken', responseData.refresh);
+        
+        return {
+          status: response.status,
+          data: responseData,
+          message: 'Login successful'
+        };
+      } else {
+        const errorText = await response.text();
+        console.error('Login failed:', response.status, errorText);
+        
+        return {
+          status: response.status,
+          data: null,
+          message: `Login failed: ${errorText}`
+        };
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      return {
+        status: 500,
+        data: null,
+        message: error instanceof Error ? error.message : 'Unknown error during login'
+      };
     }
-    
-    return response;
   },
   
   // Registrera-funktion

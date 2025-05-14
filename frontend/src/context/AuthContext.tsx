@@ -81,15 +81,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await authService.login({ email, password });
       
       if (response.status === 200 && response.data) {
-        setState({
-          user: response.data.user,
-          token: response.data.access,
-          refreshToken: response.data.refresh,
-          isAuthenticated: true,
-          isLoading: false,
-          error: null,
-        });
-        return true;
+        // Spara tokens
+        const { access, refresh } = response.data;
+        localStorage.setItem('token', access);
+        localStorage.setItem('refreshToken', refresh);
+        
+        // Hämta användarinformation
+        try {
+          const userResponse = await authService.getCurrentUser();
+          
+          if (userResponse.status === 200 && userResponse.data) {
+            setState({
+              user: userResponse.data,
+              token: access,
+              refreshToken: refresh,
+              isAuthenticated: true,
+              isLoading: false,
+              error: null,
+            });
+            return true;
+          } else {
+            throw new Error(userResponse.message || 'Failed to get user data');
+          }
+        } catch (userError) {
+          console.error('Failed to fetch user data after login:', userError);
+          setState({
+            user: null,
+            token: access,
+            refreshToken: refresh,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null,
+          });
+          // Trots allt returnera framgång eftersom autentiseringen faktiskt lyckades
+          return true;
+        }
       } else {
         setState(prev => ({
           ...prev,

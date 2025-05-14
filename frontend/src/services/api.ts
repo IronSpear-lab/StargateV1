@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { ApiResponse, PaginatedResponse } from '../types';
 
-// API-basulen
+// API-basulen - anpassa denna baserat på miljö
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001/api';
 
 // Skapa en Axios-instans med basinställningar
@@ -10,6 +10,8 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Viktigt för CORS med autentiseringssupport
+  timeout: 10000, // Timeout på 10 sekunder
 });
 
 // Interceptor för att hantera autentiseringstoken

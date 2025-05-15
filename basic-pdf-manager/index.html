@@ -1930,6 +1930,137 @@
         isDragging = false;
       });
     }
+    
+    // Text-to-speech functions
+    function startSpeechSynthesis() {
+      if (!pdfDoc || !extractedTextContent[pageNum]) {
+        showNotification('Ingen text att läsa upp från den aktuella sidan.');
+        return;
+      }
+      
+      if (isSpeaking) {
+        stopSpeechSynthesis();
+        return;
+      }
+      
+      // Create new utterance
+      speechUtterance = new SpeechSynthesisUtterance(extractedTextContent[pageNum]);
+      
+      // Set language to Swedish
+      speechUtterance.lang = 'sv-SE';
+      
+      // Set speech rate (1 = normal speed)
+      speechUtterance.rate = 1.0;
+      
+      // Store current page
+      currentSpeechPage = pageNum;
+      
+      // Show visual indication that reading is active
+      document.getElementById('read-aloud-btn').style.display = 'none';
+      document.getElementById('stop-read-aloud-btn').style.display = 'inline-flex';
+      
+      // Create a highlight element to show text is being read
+      const canvas = document.getElementById('pdf-canvas');
+      if (canvas) {
+        highlightedTextElement = document.createElement('div');
+        highlightedTextElement.className = 'tts-highlight';
+        highlightedTextElement.style.position = 'absolute';
+        highlightedTextElement.style.top = '0';
+        highlightedTextElement.style.left = '0';
+        highlightedTextElement.style.width = '100%';
+        highlightedTextElement.style.height = '100%';
+        highlightedTextElement.style.pointerEvents = 'none';
+        highlightedTextElement.style.boxShadow = 'inset 0 0 0 3px rgba(99, 102, 241, 0.5)';
+        highlightedTextElement.style.zIndex = '10';
+        canvas.parentNode.appendChild(highlightedTextElement);
+      }
+      
+      // Handle end of speech
+      speechUtterance.onend = function() {
+        // If there are more pages and auto-continue is enabled, go to next page
+        if (currentSpeechPage < pdfDoc.numPages) {
+          pageNum = currentSpeechPage + 1;
+          renderPage(pageNum).then(() => {
+            updatePageInfo();
+            // Short delay before starting next page
+            setTimeout(() => {
+              startSpeechSynthesis();
+            }, 1000);
+          });
+        } else {
+          stopSpeechSynthesis();
+        }
+      };
+      
+      // Start speaking
+      speechSynthesis.speak(speechUtterance);
+      isSpeaking = true;
+    }
+    
+    function stopSpeechSynthesis() {
+      if (speechSynthesis) {
+        speechSynthesis.cancel();
+      }
+      
+      isSpeaking = false;
+      
+      // Reset UI
+      document.getElementById('read-aloud-btn').style.display = 'inline-flex';
+      document.getElementById('stop-read-aloud-btn').style.display = 'none';
+      
+      // Remove highlight
+      if (highlightedTextElement && highlightedTextElement.parentNode) {
+        highlightedTextElement.parentNode.removeChild(highlightedTextElement);
+        highlightedTextElement = null;
+      }
+    }
+    
+    function showNotification(message) {
+      // Simple notification display
+      const notification = document.createElement('div');
+      notification.className = 'notification';
+      notification.innerText = message;
+      notification.style.position = 'fixed';
+      notification.style.bottom = '20px';
+      notification.style.right = '20px';
+      notification.style.backgroundColor = '#4f46e5';
+      notification.style.color = 'white';
+      notification.style.padding = '12px 20px';
+      notification.style.borderRadius = '4px';
+      notification.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+      notification.style.zIndex = '9999';
+      
+      document.body.appendChild(notification);
+      
+      // Remove after 3 seconds
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.parentNode.removeChild(notification);
+        }
+      }, 3000);
+    }
+    
+    // Register accessibility event listeners after page load
+    document.addEventListener('DOMContentLoaded', function() {
+      const readAloudBtn = document.getElementById('read-aloud-btn');
+      const stopReadAloudBtn = document.getElementById('stop-read-aloud-btn');
+      const accessibilityToggleBtn = document.getElementById('accessibility-toggle');
+      
+      if (readAloudBtn) {
+        readAloudBtn.addEventListener('click', startSpeechSynthesis);
+      }
+      
+      if (stopReadAloudBtn) {
+        stopReadAloudBtn.addEventListener('click', stopSpeechSynthesis);
+      }
+      
+      if (accessibilityToggleBtn) {
+        accessibilityToggleBtn.addEventListener('click', function() {
+          // Toggle accessibility panel (to be implemented)
+          showNotification('Tillgänglighetsfunktioner aktiverade');
+        });
+      }
+    });
   </script>
 </body>
 </html>

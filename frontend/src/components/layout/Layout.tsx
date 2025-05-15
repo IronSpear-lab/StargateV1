@@ -1,9 +1,20 @@
-import { Outlet } from 'react-router-dom';
-import { Box } from '@mui/joy';
+import * as React from 'react';
+import { Box, Sheet } from '@mui/joy';
+import Header from './Header';
 import Sidebar from './Sidebar';
 import TopMenu from './TopMenu';
 
-const Layout = () => {
+interface LayoutProps {
+  children: React.ReactNode;
+}
+
+export const Layout: React.FC<LayoutProps> = ({ children }) => {
+  const [sidebarOpen, setSidebarOpen] = React.useState(true);
+  
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
   return (
     <Box sx={{ 
       display: 'flex', 

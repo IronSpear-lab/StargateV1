@@ -9,6 +9,7 @@ from django.dispatch import receiver
 class Directory(models.Model):
     """Directory model for file organization (tree structure)"""
     name = models.CharField(max_length=255)
+<<<<<<< HEAD
     slug = models.SlugField(max_length=255, unique=True, null=True, blank=True)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='directories', null=True, blank=True)
     parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='subdirectories')
@@ -21,11 +22,16 @@ class Directory(models.Model):
     page_description = models.TextField(blank=True, null=True)
     has_page = models.BooleanField(default=True)  # Om en webbsida ska skapas för mappen
     
+=======
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='directories')
+    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='subdirectories')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='created_directories')
+>>>>>>> 48ca818 (Restored to '48d8f2899175e71ec876d0e4e4fea3901e40ddf7')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        unique_together = ('name', 'project', 'parent', 'is_sidebar_item')
+        unique_together = ('name', 'project', 'parent')
         verbose_name_plural = 'Directories'
     
     def save(self, *args, **kwargs):

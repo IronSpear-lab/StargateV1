@@ -1,0 +1,83 @@
+Hierarkiskt filsystem (Hierarchical File System)
+Mappar och filer organiseras i ett trädsystem.
+
+Varje nod kan vara en mapp (som kan innehålla fler mappar eller filer) eller en fil (som alltid är löv i trädet).
+
+Det finns en root (rot) som startpunkt.
+
+Filer hör endast till den mapp de ligger i, precis som du önskar – det finns ingen automatisk uppåtärvning.
+
+🧭 Så här kan du förklara det:
+Systemet bygger på ett hierarkiskt trädliknande filsystem, där varje mapp (nod) kan innehålla undermappar och filer. Filer är alltid bundna till den mapp de laddas upp i – de är alltså inte synliga i andra nivåer i strukturen.
+
+På användargränssnittet representeras detta som en utfällbar mappstruktur i en sidopanel, liknande Windows File Explorer eller VS Code Sidebar. Användaren kan:
+
+Skapa mappar
+
+Skapa undermappar
+
+Ladda upp filer till en specifik mapp (endast den mappen)
+
+🧠 Bästa praxis för denna typ av system
+1. Trädstruktur / datastruktur
+Representera filsystemet som ett träd:
+
+json
+Kopiera
+Redigera
+{
+  "id": "root",
+  "name": "Root",
+  "children": [
+    {
+      "id": "folder-1",
+      "name": "Projekt A",
+      "children": [
+        {
+          "id": "folder-1-1",
+          "name": "Dokument",
+          "files": [
+            { "id": "file-1", "name": "spec.pdf" }
+          ]
+        }
+      ]
+    }
+  ]
+}
+2. Separation mellan mappar och filer
+Filer bör alltid vara knutna till exakt en mapp.
+
+Mappens ID bör vara en obligatorisk parent_id i varje filobjekt.
+
+3. Behörigheter (om relevant)
+Koppla behörigheter till mappar, inte till enskilda filer.
+
+Använd arv om du vill hantera användaråtkomst i flera nivåer – men inte för att visa filer på andra nivåer.
+
+4. Navigering
+Visa endast mappar i trädvyn.
+
+Visa filer i högerpanelen eller som innehåll i en vald mapp.
+
+Undvik att blanda mappar och filer på samma nivå i trädstrukturen, om tydlighet är viktig.
+
+✨ Liknande exempel/system
+Windows Explorer
+Filer visas endast i den aktuella mappen. Undermappar kan expandera i en trädvy.
+
+Visual Studio Code sidebar
+Exakt samma trädlogik: mappar kan öppnas/stängas, filer visas per mapp.
+
+Google Drive (i mappläge)
+Visar bara filer i den mapp du klickat på – men tillåter även genvägar (vilket du inte vill ha).
+
+🧰 Teknisk stack (för frontendfilhantering)
+Om du vill implementera detta i frontend:
+
+React + react-dnd för drag/drop
+
+Trädbibliotek: react-sortable-tree eller @atlaskit/tree
+
+UI-komponenter: shadcn/ui, Radix UI, Chakra, eller Material UI
+
+Backend: Koppla varje fil till folder_id i en databas

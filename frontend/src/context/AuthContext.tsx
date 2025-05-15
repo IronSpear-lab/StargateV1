@@ -1,216 +1,147 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, AuthState } from '../types';
-import authService from '../services/authService';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import api from '@services/api';
+import { User, AuthState } from '@types/index';
 
-// Standardvärden för auth state
+// Initial auth state
 const initialState: AuthState = {
+  isAuthenticated: false,
   user: null,
   token: null,
-  refreshToken: null,
-  isAuthenticated: false,
-  isLoading: true,
+  loading: true,
   error: null,
 };
 
-// Skapa context för autentisering
-interface AuthContextType extends AuthState {
-  login: (email: string, password: string) => Promise<boolean>;
-  register: (data: any) => Promise<boolean>;
+// Create context
+interface AuthContextProps {
+  authState: AuthState;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => void;
-  updateUser: (userData: Partial<User>) => Promise<boolean>;
+  clearError: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
-// Context provider-komponent
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [state, setState] = useState<AuthState>(initialState);
+// Provider component
+interface AuthProviderProps {
+  children: ReactNode;
+}
 
-  // Ladda användar-/token-data vid uppstart
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const [authState, setAuthState] = useState<AuthState>(initialState);
+
+  // Check if user is already logged in when component mounts
   useEffect(() => {
-    const initAuth = async () => {
-      const token = localStorage.getItem('token');
-      const refreshToken = localStorage.getItem('refreshToken');
-      
-      if (token) {
-        setState(prev => ({
-          ...prev,
-          token,
-          refreshToken,
-          isAuthenticated: true,
-        }));
+    const loadUser = async () => {
+      try {
+        const token = localStorage.getItem('token');
         
-        try {
-          const response = await authService.getCurrentUser();
-          if (response.status === 200) {
-            setState(prev => ({
-              ...prev,
-              user: response.data,
-              isLoading: false,
-            }));
-          } else {
-            throw new Error(response.message || 'Failed to get user data');
-          }
-        } catch (error) {
-          console.error('Failed to get user:', error);
-          setState(prev => ({
-            ...prev,
-            isAuthenticated: false,
-            isLoading: false,
-            error: 'Session expired. Please login again.',
-          }));
-          // Rensa tokens om de är ogiltiga
-          authService.logout();
+        if (!token) {
+          setAuthState({
+            ...initialState,
+            loading: false,
+          });
+          return;
         }
-      } else {
-        setState(prev => ({
-          ...prev,
-          isLoading: false,
-        }));
-      }
-    };
-    
-    initAuth();
-  }, []);
 
-  // Login-funktion
-  const login = async (email: string, password: string): Promise<boolean> => {
-    try {
-      setState(prev => ({ ...prev, isLoading: true, error: null }));
-      
-      console.log('Initiating login from AuthContext');
-      const response = await authService.login({ email, password });
-      console.log('Login response in AuthContext:', response);
-      
-      if (response.status === 200 && response.data) {
-        // Om vi fick en användare från API:et använder vi den, annars använder vi den simulerade
-        const user = response.data.user;
+        // Token exists, attempt to validate by getting user info
+        const response = await api.get('/users/me/');
         
-        setState({
-          user: user,
-          token: response.data.access,
-          refreshToken: response.data.refresh,
+        setAuthState({
           isAuthenticated: true,
-          isLoading: false,
+          user: response.data as User,
+          token,
+          loading: false,
           error: null,
         });
-        
-        return true;
-      } else {
-        setState(prev => ({
-          ...prev,
-          isLoading: false,
-          error: response.message || 'Login failed',
-        }));
-        return false;
+      } catch (error) {
+        // Token invalid or other error
+        localStorage.removeItem('token');
+        setAuthState({
+          ...initialState,
+          loading: false,
+        });
       }
-    } catch (error) {
-      console.error('Auth context login error:', error);
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: error instanceof Error ? error.message : 'Login failed',
-      }));
-      return false;
-    }
-  };
+    };
 
-  // Registrerings-funktion
-  const register = async (data: any): Promise<boolean> => {
+    loadUser();
+  }, []);
+
+  // Login function
+  const login = async (email: string, password: string): Promise<void> => {
     try {
-      setState(prev => ({ ...prev, isLoading: true, error: null }));
-      
-      const response = await authService.register(data);
-      
-      if (response.status === 201) {
-        // Automatisk inloggning efter registrering
-        return await login(data.email, data.password);
-      } else {
-        setState(prev => ({
-          ...prev,
-          isLoading: false,
-          error: response.message || 'Registration failed',
-        }));
-        return false;
-      }
-    } catch (error) {
-      setState(prev => ({
+      setAuthState((prev) => ({
         ...prev,
-        isLoading: false,
-        error: error instanceof Error ? error.message : 'Registration failed',
+        loading: true,
+        error: null,
       }));
-      return false;
+
+      // Get token
+      const tokenResponse = await api.post('/token/', { email, password });
+      const { access, refresh } = tokenResponse.data;
+      
+      // Store tokens
+      localStorage.setItem('token', access);
+      localStorage.setItem('refreshToken', refresh);
+      
+      // Get user info
+      const userResponse = await api.get('/users/me/');
+      
+      setAuthState({
+        isAuthenticated: true,
+        user: userResponse.data as User,
+        token: access,
+        loading: false,
+        error: null,
+      });
+    } catch (error) {
+      setAuthState((prev) => ({
+        ...prev,
+        isAuthenticated: false,
+        user: null,
+        token: null,
+        loading: false,
+        error: 'Invalid credentials or server error',
+      }));
     }
   };
 
-  // Logout-funktion
-  const logout = () => {
-    authService.logout();
-    setState({
+  // Logout function
+  const logout = (): void => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
+    
+    setAuthState({
+      isAuthenticated: false,
       user: null,
       token: null,
-      refreshToken: null,
-      isAuthenticated: false,
-      isLoading: false,
+      loading: false,
       error: null,
     });
   };
 
-  // Uppdatera användarprofil
-  const updateUser = async (userData: Partial<User>): Promise<boolean> => {
-    try {
-      setState(prev => ({ ...prev, isLoading: true }));
-      
-      const response = await authService.updateProfile(userData);
-      
-      if (response.status === 200) {
-        setState(prev => ({
-          ...prev,
-          user: response.data,
-          isLoading: false,
-        }));
-        return true;
-      } else {
-        setState(prev => ({
-          ...prev,
-          isLoading: false,
-          error: response.message || 'Failed to update profile',
-        }));
-        return false;
-      }
-    } catch (error) {
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: error instanceof Error ? error.message : 'Failed to update profile',
-      }));
-      return false;
-    }
+  // Clear any error messages
+  const clearError = (): void => {
+    setAuthState((prev) => ({
+      ...prev,
+      error: null,
+    }));
   };
 
-  // Provider-värden
-  const contextValue: AuthContextType = {
-    ...state,
-    login,
-    register,
-    logout,
-    updateUser,
-  };
-
+  // Context provider
   return (
-    <AuthContext.Provider value={contextValue}>
+    <AuthContext.Provider value={{ authState, login, logout, clearError }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-// Custom hook för att använda auth context
-export const useAuth = (): AuthContextType => {
+// Custom hook to use the auth context
+export const useAuth = (): AuthContextProps => {
   const context = useContext(AuthContext);
+  
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
+  
   return context;
 };
-
-export default AuthContext;

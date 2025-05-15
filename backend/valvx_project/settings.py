@@ -165,34 +165,13 @@ SIMPLE_JWT = {
 }
 
 # CORS settings
-CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins for simplicity in dev/testing
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5000",
-    "http://localhost:3000",
-    "http://127.0.0.1:5000",
-    "http://127.0.0.1:3000",
-    "https://c1887eca-4b64-4645-87a5-8b72c350b2cd-00-1tfkofdiqni22.kirk.replit.dev",
-]
+CORS_ALLOW_ALL_ORIGINS = DEBUG  # Allow all origins in development
+if not DEBUG:
+    CORS_ALLOWED_ORIGINS = [
+        # Production frontend URL would go here
+        "http://localhost:5000",
+    ]
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_METHODS = [
-    'DELETE',
-    'GET',
-    'OPTIONS',
-    'PATCH',
-    'POST',
-    'PUT',
-]
-CORS_ALLOW_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
-]
 
 # File upload settings
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10 MB

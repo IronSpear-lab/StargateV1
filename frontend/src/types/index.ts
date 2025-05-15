@@ -1,4 +1,7 @@
-// Auth types
+// Basic type definitions for the ValvX platform
+// This file defines common TypeScript interfaces used throughout the application
+
+// User types
 export interface User {
   id: number;
   username: string;
@@ -9,12 +12,12 @@ export interface User {
   phone_number?: string;
 }
 
+// Authentication types
 export interface AuthState {
+  isAuthenticated: boolean;
   user: User | null;
   token: string | null;
-  refreshToken: string | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
+  loading: boolean;
   error: string | null;
 }
 
@@ -30,9 +33,33 @@ export interface Project {
   updated_at: string;
 }
 
+// Role types
+export enum UserRole {
+  PROJECT_LEADER = 'project_leader',
+  MEMBER = 'member',
+  GUEST = 'guest',
+}
+
+export interface RoleAccess {
+  id: number;
+  user: number;
+  project: number;
+  role: UserRole;
+}
+
 // Task types
-export type TaskStatus = 'todo' | 'in_progress' | 'review' | 'done';
-export type TaskPriority = 'low' | 'medium' | 'high';
+export enum TaskStatus {
+  TODO = 'todo',
+  IN_PROGRESS = 'in_progress',
+  REVIEW = 'review',
+  DONE = 'done',
+}
+
+export enum TaskPriority {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+}
 
 export interface Task {
   id: number;
@@ -49,17 +76,6 @@ export interface Task {
   updated_at: string;
 }
 
-// TimeReport types
-export interface TimeReport {
-  id: number;
-  task: number;
-  user: number;
-  hours: number;
-  date: string;
-  description: string;
-  created_at: string;
-}
-
 // File types
 export interface Directory {
   id: number;
@@ -69,8 +85,6 @@ export interface Directory {
   created_by: number;
   created_at: string;
   updated_at: string;
-  subdirectories?: Directory[];
-  files?: File[];
 }
 
 export interface File {
@@ -89,63 +103,82 @@ export interface File {
   updated_at: string;
 }
 
-// Calendar/Event types
-export type EventType = 'meeting' | 'task' | 'deadline';
-
-export interface CalendarEvent {
-  id: number;
-  title: string;
-  date: Date;
-  type: EventType;
-  projectName?: string;
-  location?: string;
-  color?: 'primary' | 'neutral' | 'danger' | 'success' | 'warning';
-}
-
-// Message types
-export interface Message {
+// Wiki types
+export interface WikiArticle {
   id: number;
   title: string;
   content: string;
-  author: {
-    id: number;
-    name: string;
-    avatar?: string;
-  };
-  createdAt: Date;
-  projectName?: string;
-  category?: string;
-  likesCount: number;
-  commentsCount: number;
-  isLiked?: boolean;
-  attachments?: Array<{
-    id: number;
-    name: string;
-    type: string;
-    size: number;
-  }>;
-  comments?: Array<{
-    id: number;
-    author: {
-      id: number;
-      name: string;
-      avatar?: string;
-    };
-    content: string;
-    createdAt: Date;
-  }>;
+  project: number;
+  created_by: number;
+  last_edited_by: number;
+  created_at: string;
+  updated_at: string;
+  parent?: number;
+  order: number;
 }
 
-// API Response types
+// Time reporting types
+export interface TimeReport {
+  id: number;
+  task: number;
+  user: number;
+  hours: number;
+  date: string;
+  description: string;
+  created_at: string;
+}
+
+// Notification types
+export enum NotificationType {
+  TASK_ASSIGNED = 'task_assigned',
+  TASK_COMPLETED = 'task_completed',
+  COMMENT_ADDED = 'comment_added',
+  FILE_UPLOADED = 'file_uploaded',
+  MEETING_SCHEDULED = 'meeting_scheduled',
+  DUE_DATE_REMINDER = 'due_date_reminder',
+  CUSTOM = 'custom',
+}
+
+export interface Notification {
+  id: number;
+  user: number;
+  title: string;
+  message: string;
+  type: NotificationType;
+  project?: number;
+  task?: number;
+  is_read: boolean;
+  created_at: string;
+}
+
+// Meeting types
+export interface Meeting {
+  id: number;
+  title: string;
+  description: string;
+  project: number;
+  organizer: number;
+  attendees: number[];
+  start_time: string;
+  end_time: string;
+  location: string;
+  is_virtual: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// API response types
 export interface ApiResponse<T> {
-  data: T;
-  status: number;
-  message?: string;
+  count?: number;
+  next?: string | null;
+  previous?: string | null;
+  results?: T[];
+  data?: T;
 }
 
-export interface PaginatedResponse<T> {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
+export interface ApiError {
+  detail?: string;
+  message?: string;
+  code?: string;
+  errors?: Record<string, string[]>;
 }

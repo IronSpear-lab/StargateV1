@@ -5,16 +5,14 @@ from core.models import Project
 class Directory(models.Model):
     """Directory model for file organization (tree structure)"""
     name = models.CharField(max_length=255)
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='directories', null=True, blank=True)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='directories')
     parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='subdirectories')
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='created_directories', null=True, blank=True)
-    type = models.CharField(max_length=20, default='folder')  # 'folder' eller 'file'
-    is_sidebar_item = models.BooleanField(default=False)  # Om mappen visas i sidebar
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='created_directories')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        unique_together = ('name', 'project', 'parent', 'is_sidebar_item')
+        unique_together = ('name', 'project', 'parent')
         verbose_name_plural = 'Directories'
     
     def __str__(self):

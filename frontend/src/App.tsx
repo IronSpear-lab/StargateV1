@@ -1,4 +1,3 @@
-
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import Layout from './components/layout/Layout';
@@ -9,7 +8,6 @@ import VaultPage from './pages/Vault';
 import Workspace from './pages/Workspace';
 import NotFoundPage from './pages/NotFound';
 import { ProtectedRoute, AuthLoginRoute } from './components/auth/ProtectedRoutes';
-
 
 // The main App component doesn't access context directly
 function App() {
@@ -78,16 +76,7 @@ function App() {
         </Routes>
       </BrowserRouter>
     </AuthProvider>
-
   );
 }
-
-// Simple component to show for routes not yet implemented
-const ComingSoonPage = ({ title }: { title: string }) => (
-  <div style={{ padding: '20px' }}>
-    <h1>{title}</h1>
-    <p>Denna sida är under utveckling och kommer snart.</p>
-  </div>
-);
 
 export default App;

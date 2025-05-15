@@ -227,17 +227,12 @@ app.use('/api/backend', createProxyMiddleware({
   }
 }));
 
-// Route for the basic PDF viewer - redirects to dialog page
+// Route for the basic PDF viewer
 app.get('/', (req, res) => {
-    res.redirect('/dialog');
+    res.sendFile(path.join(__dirname, 'simple-pdf-viewer.html'));
 });
 
-// Route for the enhanced PDF dialog viewer
-app.get('/dialog', (req, res) => {
-    res.sendFile(path.join(__dirname, 'pdf-dialog-viewer.html'));
-});
-
-// Route for the simple PDF viewer
+// Route for the simple PDF viewer (keeping backward compatibility)
 app.get('/simple', (req, res) => {
     res.sendFile(path.join(__dirname, 'simple-pdf-viewer.html'));
 });
@@ -245,6 +240,5 @@ app.get('/simple', (req, res) => {
 // Start server
 app.listen(port, '0.0.0.0', () => {
     console.log(`PDF Viewer server running at http://0.0.0.0:${port}`);
-    console.log(`Enhanced PDF Dialog Viewer: http://0.0.0.0:${port}/dialog`);
     console.log(`Simple PDF Viewer: http://0.0.0.0:${port}/simple`);
 });

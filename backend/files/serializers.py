@@ -4,46 +4,11 @@ from .models import File, Directory
 class DirectorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Directory
-        fields = ['id', 'name', 'project', 'parent', 'type', 
-                  'is_sidebar_item', 'created_by', 'created_at', 'updated_at']
-        read_only_fields = ['id', 'created_at', 'updated_at']
-        extra_kwargs = {
-            'project': {'required': False, 'allow_null': True},
-            'created_by': {'required': False, 'allow_null': True},
-            'parent': {'required': False, 'allow_null': True}
-        }
-    
-    def validate(self, data):
-        """
-        Validera att det inte finns en annan mapp med samma namn 
-        på samma nivå (med samma parent)
-        """
-        name = data.get('name')
-        parent = data.get('parent')
-        is_sidebar_item = data.get('is_sidebar_item', False)
-        
-        # Kontrollera om namnet redan finns på samma nivå
-        existing_directory = Directory.objects.filter(
-            name__iexact=name,
-            parent=parent,
-            is_sidebar_item=is_sidebar_item
-        )
-        
-        # Om vi uppdaterar en befintlig mapp, exkludera den från kontrollen
-        if self.instance:
-            existing_directory = existing_directory.exclude(id=self.instance.id)
-        
-        if existing_directory.exists():
-            raise serializers.ValidationError({
-                'name': 'En mapp med detta namn finns redan på denna nivå.'
-            })
-            
-        return data
+        fields = ['id', 'name', 'project', 'parent', 'created_by', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_by', 'created_at', 'updated_at']
     
     def create(self, validated_data):
-        request = self.context.get('request')
-        if request and request.user.is_authenticated and 'created_by' not in validated_data:
-            validated_data['created_by'] = request.user
+        validated_data['created_by'] = self.context['request'].user
         return super().create(validated_data)
 
 class FileSerializer(serializers.ModelSerializer):

@@ -93,10 +93,18 @@ const FileSystemNode = ({
           if (isFolder) toggleFolder(node.id);
         }}
         onMouseOver={(e) => {
-          (e.currentTarget as HTMLDivElement).style.backgroundColor = 'rgba(0, 0, 0, 0.04)';
+          // Find the text element (sibling of icon) and apply hover only to it
+          const textElement = e.currentTarget.querySelector('div:nth-child(2)');
+          if (textElement) {
+            (textElement as HTMLDivElement).style.borderBottom = '1px solid rgba(0, 0, 0, 0.2)';
+          }
         }}
         onMouseOut={(e) => {
-          (e.currentTarget as HTMLDivElement).style.backgroundColor = 'transparent';
+          // Remove hover effect when mouse leaves
+          const textElement = e.currentTarget.querySelector('div:nth-child(2)');
+          if (textElement) {
+            (textElement as HTMLDivElement).style.borderBottom = 'none';
+          }
         }}
       >
         {/* Mapp/filikon */}

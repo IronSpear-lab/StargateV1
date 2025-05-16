@@ -241,24 +241,34 @@ app.get('/api/folders', (req, res) => {
 });
 
 // Get PDF list endpoint
-app.get('/api/pdfs', (req, res) => {
+app.get('/api/pdfs', async (req, res) => {
   if (!req.session.user) {
     return res.status(401).json({ success: false, message: 'Inte inloggad' });
   }
 
   const folderId = req.query.folderId ? parseInt(req.query.folderId) : null;
   
-  // Filtrera på mapp om angett
-  let filteredPdfs;
-  if (folderId) {
-    // Hämta PDFer i angiven mapp
-    filteredPdfs = pdfFiles.filter(pdf => pdf.folderId === folderId);
-  } else {
-    // Hämta alla PDFer om ingen mapp anges
-    filteredPdfs = pdfFiles;
-  }
+  try {
+    // Försök att ladda PDFs från databas om listan är tom
+    if (pdfFiles.length === 0) {
+      await loadPDFFilesFromDB();
+    }
 
-  res.status(200).json({ success: true, pdfs: filteredPdfs });
+    // Filtrera på mapp om angett
+    let filteredPdfs;
+    if (folderId) {
+      // Hämta PDFer i angiven mapp
+      filteredPdfs = pdfFiles.filter(pdf => pdf.folderId === folderId);
+    } else {
+      // Hämta alla PDFer om ingen mapp anges
+      filteredPdfs = pdfFiles;
+    }
+
+    res.status(200).json({ success: true, pdfs: filteredPdfs });
+  } catch (error) {
+    console.error('Fel vid hämtning av PDF-lista:', error);
+    res.status(500).json({ success: false, message: 'Kunde inte hämta PDF-filer' });
+  }
 });
 
 // Get specific PDF endpoint
@@ -320,8 +330,30 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// Ladda PDF-filer från databasen när servern startar
+(async () => {
+  try {
+    await loadPDFFilesFromDB();
+    console.log('Databasanslutning klar, PDF-filer laddade');
+  } catch (error) {
+    console.error('Kunde inte ladda PDF-filer från databas vid uppstart:', error);
+  }
+})();
+
 // Start server
 app.listen(port, '0.0.0.0', () => {
   console.log(`PDF Manager running at http://0.0.0.0:${port}`);
   console.log(`Öppna PDF-hanteraren i din webbläsare: http://0.0.0.0:${port}/`);
+});
+
+// Spara PDF-filer till databasen vid avstängning
+process.on('SIGINT', async () => {
+  console.log('Server stängs ner, sparar PDF-filer till databas...');
+  try {
+    await savePDFFilesToDB();
+    console.log('PDF-filer sparade till databas');
+  } catch (error) {
+    console.error('Fel vid sparande av PDF-filer till databas vid avstängning:', error);
+  }
+  process.exit(0);
 });

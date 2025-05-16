@@ -13,16 +13,17 @@ const folders = pgTable('folders', {
 
 // Tabell för PDF-dokument med unika ID
 const pdfDocuments = pgTable('pdf_documents', {
-  id: serial('id').primaryKey(),
-  title: varchar('title', { length: 255 }).notNull(),
+  id: varchar('id', { length: 255 }).primaryKey(), // Använd samma id som i server.js
+  filename: varchar('filename', { length: 255 }).notNull(),
   description: text('description'),
-  originalFilename: varchar('original_filename', { length: 255 }).notNull(),
-  storedFilename: varchar('stored_filename', { length: 255 }).notNull(), // Filnamnet på disk
-  fileSize: integer('file_size').notNull(),
-  folderId: integer('folder_id').references(() => folders.id), // Foreign key till mappen
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-  createdBy: varchar('created_by', { length: 255 }).notNull()
+  originalFilename: varchar('original_filename', { length: 255 }),
+  storedFilename: varchar('stored_filename', { length: 255 }), // Filnamnet på disk
+  fileUrl: varchar('file_url', { length: 500 }),
+  size: integer('size'),
+  uploadedBy: varchar('uploaded_by', { length: 255 }),
+  uploadedAt: varchar('uploaded_at', { length: 255 }),
+  folderId: integer('folder_id'), // Koppling till mapp
+  versionNumber: integer('version_number').default(1) // Versionsnummer
 });
 
 // Tabell för versioner av PDF-dokument - om samma dokument laddas upp flera gånger

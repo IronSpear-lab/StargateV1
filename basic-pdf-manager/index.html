@@ -581,6 +581,7 @@
       padding: 0;
       background-color: #525659;
       position: relative;
+      padding-bottom: 30px; /* Extra padding i botten av modalen */
     }
     
     .pdf-viewer-container {
@@ -592,7 +593,7 @@
       justify-content: center;
       align-items: flex-start;
       padding: 3rem;
-      padding-bottom: 8rem; /* Ökat utrymme i botten för scrollbaren */
+      padding-bottom: 18rem; /* Extremt mycket utrymme i botten för scrollbaren */
       min-height: 100%;
       position: relative;
       box-sizing: border-box;
@@ -603,19 +604,27 @@
     
     /* Stilar för scrollbars i moderna webbläsare */
     .pdf-viewer-container::-webkit-scrollbar {
-      width: 12px;
-      height: 12px;
+      width: 16px;
+      height: 20px; /* Större höjd på horisontell scrollbar */
     }
     
     .pdf-viewer-container::-webkit-scrollbar-track {
-      background: rgba(0, 0, 0, 0.1);
+      background: rgba(0, 0, 0, 0.2);
       border-radius: 10px;
     }
     
     .pdf-viewer-container::-webkit-scrollbar-thumb {
-      background-color: #60cd18; /* Ny grön färg för scrollbaren */
+      background-color: #60cd18; /* Grön färg för scrollbaren */
       border-radius: 10px;
       border: 3px solid rgba(0, 0, 0, 0.1);
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+    }
+    
+    /* Extra stilar för att förbättra horisontell scrollbar synlighet */
+    .pdf-viewer-container::-webkit-scrollbar-thumb:horizontal {
+      min-width: 50px; /* Minsta bredd för horisontell tumme */
+      height: 20px;
+      background-color: #60cd18; /* Samma gröna färg */
     }
     
     #canvas-wrapper {
@@ -647,15 +656,21 @@
       padding: 16px 24px;
       border-top: 2px solid #e5e7eb;
       position: fixed;
-      bottom: 0;
+      bottom: 45px; /* Flytta upp kontrollfältet ordentligt för att ge plats för scrollbaren */
       left: 0;
       right: 0;
       box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
       justify-content: space-between;
       z-index: 10;
       /* Minska höjden för att ge mer utrymme för scrollbaren */
-      height: 70px;
+      height: 55px;
       box-sizing: border-box;
+      /* Göra kontrollfältet mer transparent för att kunna se scrollbaren */
+      background-color: rgba(255, 255, 255, 0.85);
+      /* Runda hörn för att förbättra utseendet */
+      border-radius: 8px;
+      margin: 0 15px;
+      width: calc(100% - 30px);
     }
     
     .nav-page-controls {

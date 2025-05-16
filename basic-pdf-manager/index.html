@@ -2005,8 +2005,14 @@
           container.scrollLeft = scrollXAfter;
           container.scrollTop = scrollYAfter;
           
-          // Update page info with zoom
-          pageInfo.textContent = `Sida ${pageNum} av ${pdfDoc.numPages} (${Math.round(scale * 100)}%)`;
+          // Update zoom level in the green zoom control area
+          const zoomLevelElement = document.getElementById('zoom-level');
+          if (zoomLevelElement) {
+            zoomLevelElement.textContent = `${Math.round(scale * 100)}%`;
+          }
+          
+          // Update page info without the zoom percentage
+          pageInfo.textContent = `Sida ${pageNum} av ${pdfDoc.numPages}`;
         }
       });
       

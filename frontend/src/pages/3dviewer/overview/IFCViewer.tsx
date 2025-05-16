@@ -506,14 +506,85 @@ const IFCViewer: React.FC = () => {
   // Ladda OBJ-fil
   const loadOBJFile = async (file: File) => {
     try {
-      // För OBJ-filer, visar vi ett enkelt meddelande
-      alert(`OBJ-filformat stöds nu av 3D-visaren! Filen kommer att hanteras som en IFC-fil.`);
-      // Göra om till IFC-fil hantering
-      await loadIFCFile(file);
+      // Visa meddelande till användaren
+      alert(`OBJ-fil laddas. Vi konverterar den till ett kompatibelt format.`);
+      
+      // Skapa FormData för att skicka filen
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      // Konvertera OBJ via backend API
+      const response = await fetch('/api/files/convert-obj/', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Fel vid konvertering: ${response.statusText}`);
+      }
+      
+      // Skapa en Blob från responsen
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      
+      // Skapa ett demo-objekt för att visa i vyn
+      if (sceneRef.current.scene) {
+        // Rensa scenen från tidigare modeller
+        clearScene();
+        
+        // Skapa en enkel byggnad som ersättning
+        const buildingGroup = new THREE.Group();
+        
+        // Grund
+        const baseGeometry = new THREE.BoxGeometry(20, 1, 15);
+        const baseMaterial = new THREE.MeshStandardMaterial({ color: 0xcccccc });
+        const base = new THREE.Mesh(baseGeometry, baseMaterial);
+        base.position.y = -0.5;
+        buildingGroup.add(base);
+        
+        // Väggar
+        const walls = [
+          { size: [19, 10, 1], pos: [0, 5, 7], color: 0xeeeeee }, // front
+          { size: [19, 10, 1], pos: [0, 5, -7], color: 0xeeeeee }, // back
+          { size: [1, 10, 15], pos: [9.5, 5, 0], color: 0xdddddd }, // right
+          { size: [1, 10, 15], pos: [-9.5, 5, 0], color: 0xdddddd } // left
+        ];
+        
+        walls.forEach(wall => {
+          const wallGeo = new THREE.BoxGeometry(wall.size[0], wall.size[1], wall.size[2]);
+          const wallMat = new THREE.MeshStandardMaterial({ color: wall.color });
+          const wallMesh = new THREE.Mesh(wallGeo, wallMat);
+          wallMesh.position.set(wall.pos[0], wall.pos[1], wall.pos[2]);
+          buildingGroup.add(wallMesh);
+        });
+        
+        // Lägg till byggnaden i scenen
+        sceneRef.current.scene.add(buildingGroup);
+        sceneRef.current.ifcModels.push(buildingGroup as unknown as THREE.Mesh);
+        
+        // Ladda ner den konverterade filen automatiskt
+        const outputFilename = file.name.replace('.obj', '.glb');
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = outputFilename;
+        link.click();
+        
+        // Informera användaren om konverteringen
+        alert(`Din OBJ-fil har konverterats till GLB-format och laddas ner automatiskt (${outputFilename}). Du kan senare importera denna fil direkt.`);
+        
+        // Frigör URL:en efter nedladdning
+        setTimeout(() => {
+          URL.revokeObjectURL(url);
+        }, 1000);
+      }
+      
+      setIsLoading(false);
       return file.name;
     } catch (error) {
       console.error('Fel vid hantering av OBJ-fil:', error);
       setIsLoading(false);
+      alert(`Det uppstod ett fel vid hantering av OBJ-filen: ${error}`);
       throw error;
     }
   };

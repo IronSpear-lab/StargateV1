@@ -196,6 +196,136 @@ const IFCViewer: React.FC = () => {
     sceneRef.current.controls.target.copy(center);
   };
   
+  // Sektionsboxvy-funktioner
+  const viewFront = () => {
+    if (!sceneRef.current.camera || !sceneRef.current.controls || !sceneRef.current.scene) return;
+    
+    const camera = sceneRef.current.camera;
+    // Hitta centrum av scenen
+    const box = new THREE.Box3().setFromObject(sceneRef.current.scene);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    
+    // Placera kameran framför objektet
+    camera.position.set(center.x, center.y, center.z + size.z * 1.5);
+    camera.lookAt(center);
+    
+    // Uppdatera kontrollen
+    sceneRef.current.controls.target.copy(center);
+  };
+  
+  const viewBack = () => {
+    if (!sceneRef.current.camera || !sceneRef.current.controls || !sceneRef.current.scene) return;
+    
+    const camera = sceneRef.current.camera;
+    // Hitta centrum av scenen
+    const box = new THREE.Box3().setFromObject(sceneRef.current.scene);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    
+    // Placera kameran bakom objektet
+    camera.position.set(center.x, center.y, center.z - size.z * 1.5);
+    camera.lookAt(center);
+    
+    // Uppdatera kontrollen
+    sceneRef.current.controls.target.copy(center);
+  };
+  
+  const viewLeft = () => {
+    if (!sceneRef.current.camera || !sceneRef.current.controls || !sceneRef.current.scene) return;
+    
+    const camera = sceneRef.current.camera;
+    // Hitta centrum av scenen
+    const box = new THREE.Box3().setFromObject(sceneRef.current.scene);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    
+    // Placera kameran till vänster om objektet
+    camera.position.set(center.x - size.x * 1.5, center.y, center.z);
+    camera.lookAt(center);
+    
+    // Uppdatera kontrollen
+    sceneRef.current.controls.target.copy(center);
+  };
+  
+  const viewRight = () => {
+    if (!sceneRef.current.camera || !sceneRef.current.controls || !sceneRef.current.scene) return;
+    
+    const camera = sceneRef.current.camera;
+    // Hitta centrum av scenen
+    const box = new THREE.Box3().setFromObject(sceneRef.current.scene);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    
+    // Placera kameran till höger om objektet
+    camera.position.set(center.x + size.x * 1.5, center.y, center.z);
+    camera.lookAt(center);
+    
+    // Uppdatera kontrollen
+    sceneRef.current.controls.target.copy(center);
+  };
+  
+  const viewIso = () => {
+    if (!sceneRef.current.camera || !sceneRef.current.controls || !sceneRef.current.scene) return;
+    
+    const camera = sceneRef.current.camera;
+    // Hitta centrum av scenen
+    const box = new THREE.Box3().setFromObject(sceneRef.current.scene);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    
+    // Placera kameran i iso-vy
+    const maxDim = Math.max(size.x, size.y, size.z);
+    camera.position.set(
+      center.x + maxDim, 
+      center.y + maxDim, 
+      center.z + maxDim
+    );
+    camera.lookAt(center);
+    
+    // Uppdatera kontrollen
+    sceneRef.current.controls.target.copy(center);
+  };
+  
+  const resetView = () => {
+    if (!sceneRef.current.camera || !sceneRef.current.controls || !sceneRef.current.scene) return;
+    
+    const camera = sceneRef.current.camera;
+    // Hitta centrum av scenen
+    const box = new THREE.Box3().setFromObject(sceneRef.current.scene);
+    const center = box.getCenter(new THREE.Vector3());
+    
+    // Återställ kameran till startpositionen
+    camera.position.set(15, 10, 15);
+    camera.lookAt(center);
+    
+    // Uppdatera kontrollen
+    sceneRef.current.controls.target.copy(center);
+  };
+  
+  // Sectioning planes
+  const [sectionsEnabled, setSectionsEnabled] = useState(false);
+  const toggleSections = () => {
+    setSectionsEnabled(!sectionsEnabled);
+    
+    if (!sceneRef.current.renderer) return;
+    
+    if (!sectionsEnabled) {
+      // Aktivera sectioning
+      const planes = [
+        new THREE.Plane(new THREE.Vector3(1, 0, 0), 0),
+        new THREE.Plane(new THREE.Vector3(0, 1, 0), 0),
+        new THREE.Plane(new THREE.Vector3(0, 0, 1), 0)
+      ];
+      sceneRef.current.renderer.localClippingEnabled = true;
+      sceneRef.current.renderer.clippingPlanes = planes;
+    } else {
+      // Inaktivera sectioning
+      sceneRef.current.renderer.localClippingEnabled = false;
+      sceneRef.current.renderer.clippingPlanes = [];
+    }
+  };
+  
   // Ladda exempelfilen när användaren klickar på knappen
   const handleLoadExample = () => {
     setIsLoading(true);
@@ -463,17 +593,25 @@ const IFCViewer: React.FC = () => {
         >
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
             <Typography level="body-sm" sx={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>Vyer:</Typography>
-            <Button size="sm" variant="solid" color="primary" sx={{ minWidth: '70px' }}>Front</Button>
-            <Button size="sm" variant="solid" color="primary" sx={{ minWidth: '70px' }}>Bak</Button>
-            <Button size="sm" variant="solid" color="primary" sx={{ minWidth: '70px' }}>Vänster</Button>
-            <Button size="sm" variant="solid" color="primary" sx={{ minWidth: '70px' }}>Höger</Button>
+            <Button size="sm" variant="solid" color="primary" sx={{ minWidth: '70px' }} onClick={viewFront}>Front</Button>
+            <Button size="sm" variant="solid" color="primary" sx={{ minWidth: '70px' }} onClick={viewBack}>Bak</Button>
+            <Button size="sm" variant="solid" color="primary" sx={{ minWidth: '70px' }} onClick={viewLeft}>Vänster</Button>
+            <Button size="sm" variant="solid" color="primary" sx={{ minWidth: '70px' }} onClick={viewRight}>Höger</Button>
           </Box>
           
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', borderLeft: '1px solid rgba(255,255,255,0.5)', paddingLeft: 2 }}>
             <Typography level="body-sm" sx={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>Verktyg:</Typography>
-            <Button size="sm" variant="solid" color="success" sx={{ minWidth: '80px' }}>Iso</Button>
-            <Button size="sm" variant="solid" color="success" sx={{ minWidth: '80px' }}>Återställ</Button>
-            <Button size="sm" variant="solid" color="warning" sx={{ minWidth: '80px' }}>Sektion PÅ/AV</Button>
+            <Button size="sm" variant="solid" color="success" sx={{ minWidth: '80px' }} onClick={viewIso}>Iso</Button>
+            <Button size="sm" variant="solid" color="success" sx={{ minWidth: '80px' }} onClick={resetView}>Återställ</Button>
+            <Button 
+              size="sm" 
+              variant="solid" 
+              color={sectionsEnabled ? "warning" : "neutral"} 
+              sx={{ minWidth: '80px' }}
+              onClick={toggleSections}
+            >
+              {sectionsEnabled ? 'Sektion PÅ' : 'Sektion AV'}
+            </Button>
           </Box>
         </Box>
       </Card>

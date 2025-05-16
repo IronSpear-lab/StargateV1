@@ -2005,7 +2005,7 @@
           container.scrollLeft = scrollXAfter;
           container.scrollTop = scrollYAfter;
           
-          // Update zoom level in the green zoom control area
+          // Update zoom level in the green zoom control area only
           const zoomLevelElement = document.getElementById('zoom-level');
           if (zoomLevelElement) {
             zoomLevelElement.textContent = `${Math.round(scale * 100)}%`;
@@ -2188,11 +2188,13 @@
       }, 3000);
     }
     
-    // Register accessibility event listeners after page load
+    // Register event listeners after page load
     document.addEventListener('DOMContentLoaded', function() {
       const readAloudBtn = document.getElementById('read-aloud-btn');
       const stopReadAloudBtn = document.getElementById('stop-read-aloud-btn');
       const accessibilityToggleBtn = document.getElementById('accessibility-toggle');
+      const zoomInBtn = document.getElementById('zoom-in');
+      const zoomOutBtn = document.getElementById('zoom-out');
       
       if (readAloudBtn) {
         readAloudBtn.addEventListener('click', startSpeechSynthesis);
@@ -2206,6 +2208,71 @@
         accessibilityToggleBtn.addEventListener('click', function() {
           // Toggle accessibility panel (to be implemented)
           showNotification('Tillgänglighetsfunktioner aktiverade');
+        });
+      }
+      
+      // Lägg till händelsehanterare för zoom-knapparna
+      if (zoomInBtn) {
+        zoomInBtn.addEventListener('click', function() {
+          // Öka skalan
+          if (pdfDoc) {
+            scale = Math.min(5, scale * 1.2);
+            
+            // Uppdatera canvas
+            const canvas = document.getElementById('pdf-canvas');
+            if (canvas) {
+              canvas.style.transform = `scale(${scale})`;
+              
+              // Uppdatera wrapper dimensions för att förhindra avklippning
+              const canvasWrapper = document.getElementById('canvas-wrapper');
+              if (canvasWrapper) {
+                const extraMargin = 500;
+                canvasWrapper.style.width = `${canvas.width * scale + extraMargin}px`;
+                canvasWrapper.style.height = `${canvas.height * scale + extraMargin}px`;
+                
+                // Uppdatera container padding för att undvika avklippning
+                document.querySelector('.pdf-viewer-container').style.paddingBottom = `${extraMargin}px`;
+              }
+              
+              // Uppdatera zoom-nivån i det gröna fältet
+              document.getElementById('zoom-level').textContent = `${Math.round(scale * 100)}%`;
+              
+              // Uppdatera sidinformation utan zoom-procent
+              pageInfo.textContent = `Sida ${pageNum} av ${pdfDoc.numPages}`;
+            }
+          }
+        });
+      }
+      
+      if (zoomOutBtn) {
+        zoomOutBtn.addEventListener('click', function() {
+          // Minska skalan
+          if (pdfDoc) {
+            scale = Math.max(0.5, scale / 1.2);
+            
+            // Uppdatera canvas
+            const canvas = document.getElementById('pdf-canvas');
+            if (canvas) {
+              canvas.style.transform = `scale(${scale})`;
+              
+              // Uppdatera wrapper dimensions för att förhindra avklippning
+              const canvasWrapper = document.getElementById('canvas-wrapper');
+              if (canvasWrapper) {
+                const extraMargin = 500;
+                canvasWrapper.style.width = `${canvas.width * scale + extraMargin}px`;
+                canvasWrapper.style.height = `${canvas.height * scale + extraMargin}px`;
+                
+                // Uppdatera container padding för att undvika avklippning
+                document.querySelector('.pdf-viewer-container').style.paddingBottom = `${extraMargin}px`;
+              }
+              
+              // Uppdatera zoom-nivån i det gröna fältet
+              document.getElementById('zoom-level').textContent = `${Math.round(scale * 100)}%`;
+              
+              // Uppdatera sidinformation utan zoom-procent
+              pageInfo.textContent = `Sida ${pageNum} av ${pdfDoc.numPages}`;
+            }
+          }
         });
       }
     });

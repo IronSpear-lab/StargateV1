@@ -30,8 +30,8 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd backend && python manage.py runserver 0.0.0.0:8001"
-waitForPort = 8001
+args = "cd backend && python manage.py runserver 0.0.0.0:3001"
+waitForPort = 3001
 
 [[workflows.workflow]]
 name = "frontend_workflow"
@@ -39,7 +39,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd frontend && npm run dev"
+args = "cd frontend && npm run dev -- --port 5000"
 waitForPort = 5000
 
 [[workflows.workflow]]
@@ -57,6 +57,10 @@ run = ["sh", "-c", "cd frontend && npm install @mui/joy @emotion/react @emotion/
 [[ports]]
 localPort = 3000
 externalPort = 3001
+
+[[ports]]
+localPort = 3001
+externalPort = 3002
 
 [[ports]]
 localPort = 5000

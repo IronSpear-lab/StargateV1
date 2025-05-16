@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { Box, Button, Card, CircularProgress, Grid, Typography } from '@mui/joy';
+import { IFCLoader } from 'web-ifc-three/IFCLoader';
 
-// Enklare 3D-visare baserad på Three.js
-const SimpleViewer: React.FC = () => {
+// 3D-visare för IFC-filer med web-ifc-three
+const IFCViewer: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadedModel, setLoadedModel] = useState<string | null>(null);
@@ -13,9 +14,13 @@ const SimpleViewer: React.FC = () => {
     scene?: THREE.Scene;
     camera?: THREE.PerspectiveCamera;
     renderer?: THREE.WebGLRenderer;
-    controls?: any;
+    controls?: OrbitControls;
+    ifcLoader?: IFCLoader;
     animationFrame?: number;
-  }>({});
+    ifcModels: THREE.Object3D[];
+  }>({
+    ifcModels: []
+  });
   
   // Skapa scenen när komponenten monteras
   useEffect(() => {
@@ -28,17 +33,22 @@ const SimpleViewer: React.FC = () => {
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setClearColor(0xf5f5f5); // Ljusgrå bakgrund
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
     
     // Skapa scen
     const scene = new THREE.Scene();
     
     // Ljussättning
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
     scene.add(ambientLight);
     
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
     directionalLight.position.set(5, 10, 7.5);
+    directionalLight.castShadow = true;
+    directionalLight.shadow.mapSize.width = 1024;
+    directionalLight.shadow.mapSize.height = 1024;
     scene.add(directionalLight);
     
     // Kamera
@@ -51,11 +61,16 @@ const SimpleViewer: React.FC = () => {
     camera.position.set(15, 10, 15);
     camera.lookAt(0, 0, 0);
     
+    // Skapa IFC-loader
+    const ifcLoader = new IFCLoader();
+    ifcLoader.ifcManager.setWasmPath('https://unpkg.com/web-ifc@0.0.46/');
+    
     // Importera och skapa OrbitControls
     import('three/examples/jsm/controls/OrbitControls.js').then(({ OrbitControls }) => {
       const controls = new OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
       controls.dampingFactor = 0.1;
+      controls.target.set(0, 0, 0);
       sceneRef.current.controls = controls;
     });
     
@@ -105,6 +120,8 @@ const SimpleViewer: React.FC = () => {
       scene,
       camera,
       renderer,
+      ifcLoader,
+      ifcModels: [],
       animationFrame: sceneRef.current.animationFrame
     };
     
@@ -116,6 +133,11 @@ const SimpleViewer: React.FC = () => {
         cancelAnimationFrame(sceneRef.current.animationFrame);
       }
       
+      // Rensa alla IFC-modeller
+      sceneRef.current.ifcModels.forEach(model => {
+        scene.remove(model);
+      });
+      
       if (sceneRef.current.renderer && container.contains(sceneRef.current.renderer.domElement)) {
         container.removeChild(sceneRef.current.renderer.domElement);
       }
@@ -125,6 +147,53 @@ const SimpleViewer: React.FC = () => {
       }
     };
   }, []);
+  
+  // Rensa scenen från nuvarande modeller
+  const clearScene = () => {
+    if (!sceneRef.current.scene) return;
+    
+    // Ta bort tidigare IFC-modeller
+    sceneRef.current.ifcModels.forEach(model => {
+      sceneRef.current.scene?.remove(model);
+    });
+    sceneRef.current.ifcModels = [];
+    
+    // Ta bort även andra objekt som kuben
+    const scene = sceneRef.current.scene;
+    const objectsToRemove = [];
+    
+    for (const child of scene.children) {
+      if (child instanceof THREE.Mesh && child.geometry instanceof THREE.BoxGeometry) {
+        objectsToRemove.push(child);
+      }
+    }
+    
+    objectsToRemove.forEach(obj => {
+      scene.remove(obj);
+    });
+  };
+  
+  // Centrera kameran på en modell
+  const centerCamera = (model: THREE.Mesh) => {
+    if (!sceneRef.current.camera || !sceneRef.current.controls) return;
+    
+    // Beräkna modellens boundingbox
+    const box = new THREE.Box3().setFromObject(model);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    
+    // Bestäm kameraavstånd baserat på modellens storlek
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const distance = maxDim * 2;
+    
+    // Placera kameran
+    const camera = sceneRef.current.camera;
+    camera.position.set(center.x + distance, center.y + distance, center.z + distance);
+    camera.lookAt(center);
+    
+    // Uppdatera orbit controls
+    sceneRef.current.controls.target.copy(center);
+  };
   
   // Ladda exempelfilen när användaren klickar på knappen
   const handleLoadExample = () => {
@@ -137,9 +206,8 @@ const SimpleViewer: React.FC = () => {
       
       // Skapa en enkel demo-byggnad
       if (sceneRef.current.scene) {
-        // Ta bort den tidigare kuben
-        sceneRef.current.scene.children = sceneRef.current.scene.children
-          .filter(child => !(child instanceof THREE.Mesh && child.geometry instanceof THREE.BoxGeometry));
+        // Rensa scenen från tidigare modeller
+        clearScene();
         
         // Skapa en enkel byggnad
         const buildingGroup = new THREE.Group();
@@ -196,6 +264,7 @@ const SimpleViewer: React.FC = () => {
         
         // Lägg till byggnaden i scenen
         sceneRef.current.scene.add(buildingGroup);
+        sceneRef.current.ifcModels.push(buildingGroup as unknown as THREE.Mesh);
         
         // Centrera kameran på modellen
         if (sceneRef.current.camera && sceneRef.current.controls) {
@@ -208,22 +277,54 @@ const SimpleViewer: React.FC = () => {
   };
   
   // Hantera fil-uppladdning
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    if (files && files.length > 0) {
-      const file = files[0];
-      if (file.name.toLowerCase().endsWith('.ifc')) {
-        setIsLoading(true);
-        // Simulera en filuppladdning (i en riktig implementation skulle vi använda en IFC-loader)
-        setTimeout(() => {
-          setLoadedModel(file.name);
-          setIsLoading(false);
-          alert('I denna demo-version kan vi inte ladda riktiga IFC-filer. Vi visar en demo-modell istället.');
-          handleLoadExample();
-        }, 1000);
-      } else {
-        alert('Vänligen välj en .ifc fil');
+    if (!files || files.length === 0 || !sceneRef.current.ifcLoader) return;
+    
+    const file = files[0];
+    if (!file.name.toLowerCase().endsWith('.ifc')) {
+      alert('Vänligen välj en .ifc fil');
+      return;
+    }
+    
+    setIsLoading(true);
+    setLoadedModel(file.name);
+    
+    try {
+      // Rensa scenen från tidigare modeller
+      clearScene();
+      
+      // Läs in IFC-filen som en ArrayBuffer
+      const buffer = await file.arrayBuffer();
+      
+      // Skapa en Blob från ArrayBuffer för att kunna skapa en URL
+      const blob = new Blob([buffer]);
+      const url = URL.createObjectURL(blob);
+      
+      // Ladda IFC-modellen
+      const ifcLoader = sceneRef.current.ifcLoader;
+      const model = await ifcLoader.loadAsync(url);
+      
+      if (model && sceneRef.current.scene) {
+        // Lägg till modellen i scenen
+        sceneRef.current.scene.add(model);
+        sceneRef.current.ifcModels.push(model as THREE.Mesh);
+        
+        // Centrera kameran på den laddade modellen
+        centerCamera(model as THREE.Mesh);
       }
+      
+      // Frigör URL:en
+      URL.revokeObjectURL(url);
+      
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Fel vid laddning av IFC-fil:', error);
+      setIsLoading(false);
+      alert('Det uppstod ett fel vid laddning av IFC-filen. Försök igen eller prova en annan fil.');
+      
+      // Återställ UI
+      setLoadedModel(null);
     }
   };
 
@@ -310,4 +411,4 @@ const SimpleViewer: React.FC = () => {
   );
 };
 
-export default SimpleViewer;
+export default IFCViewer;

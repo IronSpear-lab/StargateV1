@@ -1,7 +1,7 @@
-import SimpleViewer from './IFCViewer';
+import IFCViewer from './IFCViewer';
 
 const OverviewPage = () => {
-  return <SimpleViewer />;
+  return <IFCViewer />;
 };
 
 export default OverviewPage;

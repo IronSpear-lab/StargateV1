@@ -630,30 +630,30 @@
     }
     
     /* Dedikerad horisontell scrollbar som alltid visas */
-    .custom-horizontal-scrollbar {
-      position: absolute;
-      bottom: 48px; /* Precis ovanför kontrollfältet */
-      left: 0;
-      right: 0;
+    .custom-scrollbar-container {
+      position: relative;
       height: 20px;
-      background: rgba(0, 0, 0, 0.2);
-      z-index: 20;
+      background: #333;
+      margin-bottom: 2px;
       overflow: hidden;
-      border-radius: 0;
     }
     
-    .custom-horizontal-scrollbar-thumb {
+    .custom-scrollbar-track {
+      width: 100%;
+      height: 20px;
+      background: rgba(0, 0, 0, 0.3);
+      position: relative;
+    }
+    
+    .custom-scrollbar-thumb {
       position: absolute;
       height: 20px;
+      width: 30%;
+      left: 0;
       background-color: #60cd18;
-      border-radius: 10px;
-      min-width: 50px;
+      border-radius: 0;
       cursor: pointer;
       transition: background-color 0.2s;
-    }
-    
-    .custom-horizontal-scrollbar-thumb:hover {
-      background-color: #55b516;
     }
     
     /* Ta bort det dedikerade området för scrollbar då det inte behövs med ny layout */
@@ -1224,6 +1224,13 @@
           <div class="current-version-tag">Nuvarande version</div>
           <div id="pdf-viewer-container" class="pdf-viewer-container">
             <!-- PDF visas här -->
+          </div>
+          
+          <!-- Dedikerad grön scrollbar-yta -->
+          <div class="custom-scrollbar-container">
+            <div class="custom-scrollbar-track">
+              <div class="custom-scrollbar-thumb"></div>
+            </div>
           </div>
           
           <div class="pdf-navigation modern-pdf-controls">

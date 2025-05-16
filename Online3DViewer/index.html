@@ -105,6 +105,10 @@
             <button class="section-btn" id="full-view">Full</button>
         </div>
         
+        <div style="margin: 15px 0;">
+            <button class="section-btn" id="fit-to-window" style="width: 100%; margin-top: 10px; background: #ff9800;">Anpassa modell till fönster</button>
+        </div>
+        
         <h3>Sektionsbox-kontroller</h3>
         
         <div class="control-group">
@@ -328,6 +332,61 @@
             
             // Set the reset-view as initially active
             document.getElementById('reset-view').classList.add('active');
+            
+            // Setup fit to window button
+            document.getElementById('fit-to-window').addEventListener('click', function() {
+                if (model && viewer) {
+                    // Beräkna modellens omgivande box
+                    const box = new THREE.Box3().setFromObject(model);
+                    
+                    // Beräkna boxens center och storlek
+                    const center = box.getCenter(new THREE.Vector3());
+                    const size = box.getSize(new THREE.Vector3());
+                    
+                    // Anpassa kameran till modellen
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    const fov = viewer.camera.fov * (Math.PI / 180);
+                    const cameraZ = Math.abs(maxDim / Math.sin(fov / 2));
+                    
+                    // Uppdatera kameraposition för att visa hela modellen
+                    const direction = new THREE.Vector3(1, 1, 1).normalize();
+                    const distance = cameraZ * 0.9; // Lite mindre än max för att ge marginal
+                    
+                    viewer.camera.position.copy(center).add(direction.multiplyScalar(distance));
+                    
+                    if (viewer.controls) {
+                        viewer.controls.target.copy(center);
+                    }
+                    
+                    // Uppdatera sektionsbox för att passa modellen
+                    const padding = maxDim * 0.1; // 10% marginal
+                    
+                    document.getElementById('xMin').value = Math.floor(center.x - (size.x/2) - padding);
+                    document.getElementById('xMax').value = Math.ceil(center.x + (size.x/2) + padding);
+                    document.getElementById('yMin').value = Math.floor(center.y - (size.y/2) - padding);
+                    document.getElementById('yMax').value = Math.ceil(center.y + (size.y/2) + padding);
+                    document.getElementById('zMin').value = Math.floor(center.z - (size.z/2) - padding);
+                    document.getElementById('zMax').value = Math.ceil(center.z + (size.z/2) + padding);
+                    
+                    // Uppdatera sektionsplanerna
+                    planes[0].constant = -parseFloat(document.getElementById('xMin').value);
+                    planes[1].constant = parseFloat(document.getElementById('xMax').value);
+                    planes[2].constant = -parseFloat(document.getElementById('yMin').value);
+                    planes[3].constant = parseFloat(document.getElementById('yMax').value);
+                    planes[4].constant = -parseFloat(document.getElementById('zMin').value);
+                    planes[5].constant = parseFloat(document.getElementById('zMax').value);
+                    
+                    // Uppdatera vyn
+                    if (viewer.viewer && viewer.viewer.impl) {
+                        viewer.viewer.impl.invalidate(true);
+                    }
+                    
+                    // Markera att ingen av vy-knapparna är aktiva
+                    document.querySelectorAll('.section-buttons .section-btn').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                }
+            });
         }
     </script>
 </body>

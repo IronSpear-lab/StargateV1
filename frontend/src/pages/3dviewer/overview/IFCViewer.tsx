@@ -14,7 +14,7 @@ const IFCViewer: React.FC = () => {
     scene?: THREE.Scene;
     camera?: THREE.PerspectiveCamera;
     renderer?: THREE.WebGLRenderer;
-    controls?: OrbitControls;
+    controls?: any;
     ifcLoader?: IFCLoader;
     animationFrame?: number;
     ifcModels: THREE.Object3D[];
@@ -174,7 +174,7 @@ const IFCViewer: React.FC = () => {
   };
   
   // Centrera kameran på en modell
-  const centerCamera = (model: THREE.Mesh) => {
+  const centerCamera = (model: THREE.Object3D) => {
     if (!sceneRef.current.camera || !sceneRef.current.controls) return;
     
     // Beräkna modellens boundingbox
@@ -302,26 +302,45 @@ const IFCViewer: React.FC = () => {
       const url = URL.createObjectURL(blob);
       
       // Ladda IFC-modellen
+      // Vi fångar upp typfel genom att använda any och runtime-typkontroller
       const ifcLoader = sceneRef.current.ifcLoader;
-      const model = await ifcLoader.loadAsync(url);
       
-      if (model && sceneRef.current.scene) {
-        // Lägg till modellen i scenen
-        sceneRef.current.scene.add(model);
-        sceneRef.current.ifcModels.push(model as THREE.Mesh);
+      ifcLoader.load(url, (model: any) => {
+        if (model && sceneRef.current.scene) {
+          // Lägg till modellen i scenen
+          sceneRef.current.scene.add(model);
+          
+          // Säkerställ att modellen är ett Object3D
+          if (model.isObject3D) {
+            sceneRef.current.ifcModels.push(model);
+            
+            // Centrera kameran på den laddade modellen
+            centerCamera(model);
+          }
+        }
         
-        // Centrera kameran på den laddade modellen
-        centerCamera(model as THREE.Mesh);
-      }
-      
-      // Frigör URL:en
-      URL.revokeObjectURL(url);
-      
-      setIsLoading(false);
+        // Frigör URL:en
+        URL.revokeObjectURL(url);
+        
+        setIsLoading(false);
+      }, 
+      // Progress callback
+      (progress: any) => {
+        console.log('Laddar IFC:', (progress.loaded / progress.total) * 100, '%');
+      },
+      // Error callback
+      (error: any) => {
+        console.error('Fel vid laddning av IFC-fil:', error);
+        setIsLoading(false);
+        alert('Det uppstod ett fel vid laddning av IFC-filen. Försök igen eller prova en annan fil.');
+        
+        // Återställ UI
+        setLoadedModel(null);
+      });
     } catch (error) {
-      console.error('Fel vid laddning av IFC-fil:', error);
+      console.error('Fel vid hantering av IFC-fil:', error);
       setIsLoading(false);
-      alert('Det uppstod ett fel vid laddning av IFC-filen. Försök igen eller prova en annan fil.');
+      alert('Det uppstod ett fel vid hantering av IFC-filen. Försök igen eller prova en annan fil.');
       
       // Återställ UI
       setLoadedModel(null);

@@ -308,6 +308,7 @@ const IFCViewer: React.FC = () => {
     planes: THREE.Plane[];
     helpers: THREE.PlaneHelper[];
     transformControls?: any;
+    cleanupHandlers?: () => void;
   }>({
     planes: [],
     helpers: []
@@ -316,6 +317,10 @@ const IFCViewer: React.FC = () => {
   // Sectioning planes
   const [sectionsEnabled, setSectionsEnabled] = useState(false);
   
+  // Aktiv klippplan som man manipulerar
+  const [activePlaneIndex, setActivePlaneIndex] = useState(0);
+  
+  // Skapa och hantera sektionsplan
   const toggleSections = () => {
     setSectionsEnabled(!sectionsEnabled);
     
@@ -324,9 +329,9 @@ const IFCViewer: React.FC = () => {
     if (!sectionsEnabled) {
       // Aktivera sectioning
       const planes = [
-        new THREE.Plane(new THREE.Vector3(1, 0, 0), 0),    // Höger-vänster
-        new THREE.Plane(new THREE.Vector3(0, 1, 0), 0),    // Upp-ner
-        new THREE.Plane(new THREE.Vector3(0, 0, 1), 0)     // Fram-bak
+        new THREE.Plane(new THREE.Vector3(1, 0, 0), 0),    // Höger-vänster (X)
+        new THREE.Plane(new THREE.Vector3(0, 1, 0), 0),    // Upp-ner (Y)
+        new THREE.Plane(new THREE.Vector3(0, 0, 1), 0)     // Fram-bak (Z)
       ];
       
       // Skapa hjälpare för att visualisera planen
@@ -345,7 +350,7 @@ const IFCViewer: React.FC = () => {
       sceneRef.current.renderer.localClippingEnabled = true;
       sceneRef.current.renderer.clippingPlanes = planes;
       
-      // Skapa transformkontroller för det första planet
+      // Skapa transformkontroller med pilknappar
       // Vi behöver importera transform controls dynamiskt först
       import('three/examples/jsm/controls/TransformControls').then(({ TransformControls }) => {
         if (!sceneRef.current.camera || !sceneRef.current.renderer) return;
@@ -356,24 +361,73 @@ const IFCViewer: React.FC = () => {
           sceneRef.current.renderer.domElement
         );
         
-        // Koppla till första planet
-        controls.attach(helpers[0]);
+        // Koppla till den aktiva hjälparen
+        controls.attach(helpers[activePlaneIndex]);
         controls.setMode('translate'); // Sätt till dragläge
+        controls.setSize(0.75); // Gör pilarna lite mindre
         sceneRef.current.scene?.add(controls);
         
         // Lägg till lyssnare för förändringar
         controls.addEventListener('change', () => {
           // Uppdatera klippplan baserat på hjälparens position
-          if (planesRef.current.helpers[0]) {
+          if (planesRef.current.helpers[activePlaneIndex]) {
+            const helper = planesRef.current.helpers[activePlaneIndex];
+            const plane = planesRef.current.planes[activePlaneIndex];
+            
+            // Uppdatera klippplanet baserat på hjälparens position
             const normal = new THREE.Vector3();
-            planesRef.current.helpers[0].plane.normal.copy(normal);
-            const point = planesRef.current.helpers[0].position;
-            planesRef.current.planes[0].setFromNormalAndCoplanarPoint(normal, point);
+            helper.plane.normal.copy(normal);
+            const point = helper.position;
+            plane.setFromNormalAndCoplanarPoint(normal, point);
+          }
+        });
+        
+        // Inaktivera orbit kontroller medan transformation pågår
+        controls.addEventListener('dragging-changed', (event) => {
+          if (sceneRef.current.controls) {
+            sceneRef.current.controls.enabled = !event.value;
           }
         });
         
         // Spara kontroll referens
         planesRef.current.transformControls = controls;
+        
+        // Lyssna på tangentbordshändelser för att växla mellan planen
+        const handleKeyDown = (event: KeyboardEvent) => {
+          // Byt aktivt plan med tangenterna 1, 2, 3
+          if (event.key === '1' || event.key === '2' || event.key === '3') {
+            const index = parseInt(event.key) - 1;
+            setActivePlaneIndex(index);
+            
+            // Koppla kontrollen till det nya planet
+            if (planesRef.current.transformControls && planesRef.current.helpers[index]) {
+              planesRef.current.transformControls.attach(planesRef.current.helpers[index]);
+            }
+          }
+          
+          // Byt transformationsläge med tangenterna R, T, E
+          if (planesRef.current.transformControls) {
+            switch (event.key.toLowerCase()) {
+              case 'r': // Rotation
+                planesRef.current.transformControls.setMode('rotate');
+                break;
+              case 't': // Translation (förflyttning)
+                planesRef.current.transformControls.setMode('translate');
+                break;
+              case 'e': // Scale (skalning)
+                planesRef.current.transformControls.setMode('scale');
+                break;
+            }
+          }
+        };
+        
+        // Registrera event lyssnare
+        window.addEventListener('keydown', handleKeyDown);
+        
+        // Städa upp när sektionen inaktiveras
+        planesRef.current.cleanupHandlers = () => {
+          window.removeEventListener('keydown', handleKeyDown);
+        };
       });
       
     } else {
@@ -392,9 +446,26 @@ const IFCViewer: React.FC = () => {
         planesRef.current.transformControls = undefined;
       }
       
+      // Ta bort event lyssnare
+      if (planesRef.current.cleanupHandlers) {
+        planesRef.current.cleanupHandlers();
+      }
+      
       // Rensa referenser
       planesRef.current.planes = [];
       planesRef.current.helpers = [];
+    }
+  };
+  
+  // Funktion för att byta aktivt plan
+  const switchActivePlane = (index: number) => {
+    if (index < 0 || index >= planesRef.current.helpers.length) return;
+    
+    setActivePlaneIndex(index);
+    
+    // Koppla kontrollen till det nya planet
+    if (planesRef.current.transformControls && planesRef.current.helpers[index]) {
+      planesRef.current.transformControls.attach(planesRef.current.helpers[index]);
     }
   };
   
@@ -788,6 +859,40 @@ const IFCViewer: React.FC = () => {
             >
               {sectionsEnabled ? 'Sektion PÅ ✓' : 'Sektion AV'}
             </Button>
+            
+            {/* Visa plan-växlarknappar endast när sektioner är aktiverade */}
+            {sectionsEnabled && (
+              <>
+                <Typography level="body-sm" sx={{ ml: 1, whiteSpace: 'nowrap' }}>Aktivt plan:</Typography>
+                <Button 
+                  size="sm" 
+                  variant="solid" 
+                  color={activePlaneIndex === 0 ? "primary" : "neutral"}
+                  onClick={() => switchActivePlane(0)}
+                  sx={{ minWidth: '40px' }}
+                >
+                  X
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="solid" 
+                  color={activePlaneIndex === 1 ? "primary" : "neutral"}
+                  onClick={() => switchActivePlane(1)}
+                  sx={{ minWidth: '40px' }}
+                >
+                  Y
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="solid" 
+                  color={activePlaneIndex === 2 ? "primary" : "neutral"}
+                  onClick={() => switchActivePlane(2)}
+                  sx={{ minWidth: '40px' }}
+                >
+                  Z
+                </Button>
+              </>
+            )}
           </Box>
         </Box>
       </Card>

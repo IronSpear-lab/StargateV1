@@ -388,6 +388,14 @@ const IFCViewer: React.FC = () => {
               Visa exempel
             </Button>
             
+            <Button
+              variant="soft"
+              color="success"
+              onClick={() => window.open('http://localhost:8080', '_blank')}
+            >
+              Öppna Sektionsboxvy
+            </Button>
+            
             {loadedModel && (
               <Typography level="body-sm" sx={{ ml: 1, alignSelf: 'center' }}>
                 Laddat: {loadedModel}
@@ -400,6 +408,7 @@ const IFCViewer: React.FC = () => {
             <Typography level="body-sm">
               Denna 3D-visare kan visa BIM-modeller. Ladda upp en IFC-fil eller använd exempelmodellen.
               Du kan rotera vyn genom att dra med musen, zooma med scrollhjulet.
+              För att använda sektionsbox, klicka på "Öppna Sektionsboxvy"-knappen.
             </Typography>
           </Card>
         </Grid>

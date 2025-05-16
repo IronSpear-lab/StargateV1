@@ -14,26 +14,30 @@
         }
         #viewer {
             position: absolute;
-            top: 50px; left: 0; bottom: 0; right: 260px;
-        }
-        #controls {
-            position: absolute;
+            top: 50px; 
+            left: 0; 
+            bottom: 60px; 
             right: 0;
-            top: 0;
+        }
+        #bottom-menu {
+            position: absolute;
             bottom: 0;
-            width: 260px;
-            background: #f0f0f0;
-            overflow-y: auto;
-            padding: 15px;
-            box-sizing: border-box;
-            border-left: 1px solid #ddd;
-            box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+            left: 0;
+            right: 0;
+            height: 60px;
+            background-color: #333;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            box-shadow: 0 -2px 4px rgba(0,0,0,0.2);
+            overflow-x: auto;
+            white-space: nowrap;
         }
         #toolbar {
             position: absolute;
             top: 0;
             left: 0;
-            right: 260px;
+            right: 0;
             height: 50px;
             background-color: #2196F3;
             display: flex;
@@ -57,6 +61,40 @@
         .toolbar-btn:hover {
             background-color: #f1f8ff;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .section-btn-bottom {
+            padding: 8px 12px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin: 0 5px;
+            transition: background 0.2s;
+        }
+        .section-btn-bottom:hover {
+            background: #45a049;
+        }
+        .section-btn-bottom.active {
+            background: #2E7D32;
+            box-shadow: 0 0 5px rgba(255,255,255,0.3);
+        }
+        .menu-group {
+            display: flex;
+            align-items: center;
+            margin-right: 15px;
+            padding-right: 15px;
+            border-right: 1px solid rgba(255,255,255,0.2);
+        }
+        .menu-group:last-child {
+            border-right: none;
+        }
+        .menu-title {
+            color: #fff;
+            font-size: 14px;
+            margin-right: 10px;
+            opacity: 0.8;
         }
         input[type=range] {
             width: 100%;
@@ -119,55 +157,28 @@
 </head>
 <body>
     <div id="toolbar">
+        <h2 style="color: white; margin: 0 15px 0 0;">3D Översikt</h2>
         <button class="toolbar-btn" id="fit-to-window-top">Anpassa modell till fönster</button>
     </div>
     <div id="viewer"></div>
-    <div id="controls">
-        <h3>Sektionsvy</h3>
-        
-        <div class="section-buttons">
-            <button class="section-btn" id="front-view">Front</button>
-            <button class="section-btn" id="back-view">Bak</button>
-            <button class="section-btn" id="left-view">Vänster</button>
-            <button class="section-btn" id="right-view">Höger</button>
-            <button class="section-btn" id="top-view">Över</button>
-            <button class="section-btn" id="bottom-view">Under</button>
-            <button class="section-btn" id="reset-view">Återställ</button>
-            <button class="section-btn" id="iso-view">Iso</button>
-            <button class="section-btn" id="full-view">Full</button>
+    <div id="bottom-menu">
+        <div class="menu-group">
+            <span class="menu-title">Vyer:</span>
+            <button class="section-btn-bottom" id="front-view-bottom">Front</button>
+            <button class="section-btn-bottom" id="back-view-bottom">Bak</button>
+            <button class="section-btn-bottom" id="left-view-bottom">Vänster</button>
+            <button class="section-btn-bottom" id="right-view-bottom">Höger</button>
+            <button class="section-btn-bottom" id="top-view-bottom">Över</button>
+            <button class="section-btn-bottom" id="bottom-view-bottom">Under</button>
         </div>
         
-        <div style="margin: 15px 0;">
-            <button class="section-btn" id="fit-to-window" style="width: 100%; margin-top: 10px; background: #ff9800;">Anpassa modell till fönster</button>
+        <div class="menu-group">
+            <span class="menu-title">Verktyg:</span>
+            <button class="section-btn-bottom" id="reset-view-bottom">Återställ</button>
+            <button class="section-btn-bottom" id="iso-view-bottom">Iso</button>
+            <button class="section-btn-bottom" id="full-view-bottom">Full</button>
+            <button class="section-btn-bottom" id="toggle-planes-bottom">Sektioner PÅ/AV</button>
         </div>
-        
-        <h3>Sektionsbox-kontroller</h3>
-        
-        <div class="control-group">
-            <label>X Min</label>
-            <input type="range" id="xMin" min="-50" max="0" value="-10">
-            
-            <label>X Max</label>
-            <input type="range" id="xMax" min="0" max="50" value="10">
-        </div>
-        
-        <div class="control-group">
-            <label>Y Min</label>
-            <input type="range" id="yMin" min="-50" max="0" value="-10">
-            
-            <label>Y Max</label>
-            <input type="range" id="yMax" min="0" max="50" value="10">
-        </div>
-        
-        <div class="control-group">
-            <label>Z Min</label>
-            <input type="range" id="zMin" min="-50" max="0" value="-10">
-            
-            <label>Z Max</label>
-            <input type="range" id="zMax" min="0" max="50" value="10">
-        </div>
-        
-        <button class="toggle-planes" id="toggle-planes">Växla sektionsplan PÅ/AV</button>
     </div>
 
     <script>
@@ -420,9 +431,95 @@
                 }
             }
             
-            // Setup fit to window buttons
-            document.getElementById('fit-to-window').addEventListener('click', fitModelToWindow);
+            // Setup toolbar and bottom menu buttons
             document.getElementById('fit-to-window-top').addEventListener('click', fitModelToWindow);
+            
+            // Setup toggle planes button
+            const togglePlanesBtn = document.getElementById('toggle-planes-bottom');
+            togglePlanesBtn.addEventListener('click', function() {
+                planesEnabled = !planesEnabled;
+                if (planesEnabled) {
+                    viewer.viewer.impl.renderer.clippingPlanes = planes;
+                    togglePlanesBtn.textContent = "Sektioner PÅ/AV";
+                    togglePlanesBtn.style.background = "#4CAF50";
+                } else {
+                    viewer.viewer.impl.renderer.clippingPlanes = [];
+                    togglePlanesBtn.textContent = "Sektioner AV";
+                    togglePlanesBtn.style.background = "#f44336";
+                }
+                viewer.viewer.impl.invalidate(true);
+            });
+            
+            // Map bottom menu buttons to view functions
+            const viewButtonMappings = {
+                'front-view-bottom': 'front-view',
+                'back-view-bottom': 'back-view',
+                'left-view-bottom': 'left-view',
+                'right-view-bottom': 'right-view',
+                'top-view-bottom': 'top-view',
+                'bottom-view-bottom': 'bottom-view',
+                'reset-view-bottom': 'reset-view',
+                'iso-view-bottom': 'iso-view',
+                'full-view-bottom': 'full-view'
+            };
+            
+            // Add event listeners to bottom menu buttons
+            Object.entries(viewButtonMappings).forEach(([bottomId, originalId]) => {
+                const bottomButton = document.getElementById(bottomId);
+                if (bottomButton) {
+                    bottomButton.addEventListener('click', function() {
+                        const view = views[originalId];
+                        if (view) {
+                            // Update camera position
+                            if (viewer && viewer.camera) {
+                                viewer.camera.position.set(
+                                    view.camera.position[0],
+                                    view.camera.position[1],
+                                    view.camera.position[2]
+                                );
+                                
+                                if (viewer.controls) {
+                                    viewer.controls.target.set(
+                                        view.camera.target[0],
+                                        view.camera.target[1],
+                                        view.camera.target[2]
+                                    );
+                                }
+                            }
+                            
+                            // Update clipping planes
+                            planes[0].constant = -view.planes.xMin; // X min
+                            planes[1].constant = view.planes.xMax;  // X max
+                            planes[2].constant = -view.planes.yMin; // Y min
+                            planes[3].constant = view.planes.yMax;  // Y max
+                            planes[4].constant = -view.planes.zMin; // Z min
+                            planes[5].constant = view.planes.zMax;  // Z max
+                            
+                            // Make sure planes are enabled
+                            if (!planesEnabled) {
+                                planesEnabled = true;
+                                viewer.viewer.impl.renderer.clippingPlanes = planes;
+                                document.getElementById('toggle-planes-bottom').textContent = "Sektioner PÅ/AV";
+                                document.getElementById('toggle-planes-bottom').style.background = "#4CAF50";
+                            }
+                            
+                            // Update active button
+                            document.querySelectorAll('.section-btn-bottom').forEach(btn => {
+                                btn.classList.remove('active');
+                            });
+                            this.classList.add('active');
+                            
+                            // Request redraw
+                            if (viewer && viewer.viewer && viewer.viewer.impl) {
+                                viewer.viewer.impl.invalidate(true);
+                            }
+                        }
+                    });
+                }
+            });
+            
+            // Set the reset-view-bottom as initially active
+            document.getElementById('reset-view-bottom').classList.add('active');
         }
     </script>
 </body>

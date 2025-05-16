@@ -442,6 +442,40 @@ const IFCViewer: React.FC = () => {
             '& canvas': { outline: 'none' }
           }} 
         />
+        
+        {/* Sektionsboxy-kontroller i botten */}
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            background: 'rgba(33, 150, 243, 0.9)',
+            padding: '10px',
+            display: 'flex',
+            justifyContent: 'center',
+            gap: 2,
+            borderTop: '1px solid rgba(255,255,255,0.3)',
+            boxShadow: '0 -2px 10px rgba(0,0,0,0.1)',
+            zIndex: 5,
+            color: 'white'
+          }}
+        >
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+            <Typography level="body-sm" sx={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>Vyer:</Typography>
+            <Button size="sm" variant="solid" color="primary" sx={{ minWidth: '70px' }}>Front</Button>
+            <Button size="sm" variant="solid" color="primary" sx={{ minWidth: '70px' }}>Bak</Button>
+            <Button size="sm" variant="solid" color="primary" sx={{ minWidth: '70px' }}>Vänster</Button>
+            <Button size="sm" variant="solid" color="primary" sx={{ minWidth: '70px' }}>Höger</Button>
+          </Box>
+          
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', borderLeft: '1px solid rgba(255,255,255,0.5)', paddingLeft: 2 }}>
+            <Typography level="body-sm" sx={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>Verktyg:</Typography>
+            <Button size="sm" variant="solid" color="success" sx={{ minWidth: '80px' }}>Iso</Button>
+            <Button size="sm" variant="solid" color="success" sx={{ minWidth: '80px' }}>Återställ</Button>
+            <Button size="sm" variant="solid" color="warning" sx={{ minWidth: '80px' }}>Sektion PÅ/AV</Button>
+          </Box>
+        </Box>
       </Card>
     </Box>
   );

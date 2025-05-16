@@ -590,15 +590,24 @@
       display: flex;
       justify-content: center;
       align-items: flex-start;
-      padding: 2rem;
+      padding: 3rem;
       min-height: 100%;
       position: relative;
+      box-sizing: border-box;
+    }
+    
+    #canvas-wrapper {
+      padding: 40px;
+      display: inline-flex;
+      position: relative;
+      transform-origin: 0 0;
     }
     
     #pdf-canvas {
       box-shadow: 0 0 15px rgba(0,0,0,0.4);
-      margin-bottom: 2rem;
-      margin-right: 2rem;
+      margin-bottom: 3rem;
+      margin-right: 3rem;
+      transform-origin: 0 0;
     }
     
     .pdf-navigation {
@@ -1935,8 +1944,9 @@
         canvasWrapper.id = 'canvas-wrapper';
         canvasWrapper.style.position = 'relative';
         canvasWrapper.style.display = 'inline-block';
-        canvasWrapper.style.padding = '20px'; // Extra utrymme runt kanvas
+        canvasWrapper.style.padding = '50px'; // Mycket extra utrymme runt kanvas
         canvasWrapper.style.transformOrigin = '0 0';
+        canvasWrapper.style.margin = '50px'; // Extra marginal runt hela wrappern
         canvas.parentNode.insertBefore(canvasWrapper, canvas);
         canvasWrapper.appendChild(canvas);
       }
@@ -1971,9 +1981,17 @@
           canvas.style.transformOrigin = '0 0';
           canvas.style.transform = `scale(${scale})`;
           
-          // Set explicit dimensions på wrapper för att se till att det finns plats
-          canvasWrapper.style.width = `${canvas.width * scale + 40}px`; // Extra marginaler
-          canvasWrapper.style.height = `${canvas.height * scale + 40}px`;
+          // Set much larger explicit dimensions på wrapper för att se till att det finns gott om plats även vid hög zoom
+          const extraMargin = 500; // Mycket stor extra marginal för att undvika avklippning
+          canvasWrapper.style.width = `${canvas.width * scale + extraMargin}px`;
+          canvasWrapper.style.height = `${canvas.height * scale + extraMargin}px`;
+          
+          // Säkerställ att container har tillräckligt utrymme för att rulla
+          container.style.minWidth = '100%';
+          container.style.minHeight = '100%';
+          
+          // Se till att det finns tillräcklig marginal i botten vid hög zoom
+          document.querySelector('.pdf-viewer-container').style.paddingBottom = `${extraMargin}px`;
           
           // Calculate position on canvas after zoom
           const canvasXAfter = canvasXBefore * (scale / oldScale);

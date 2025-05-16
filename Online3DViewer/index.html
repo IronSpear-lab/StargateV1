@@ -14,7 +14,7 @@
         }
         #viewer {
             position: absolute;
-            top: 0; left: 0; bottom: 0; right: 260px;
+            top: 50px; left: 0; bottom: 0; right: 260px;
         }
         #controls {
             position: absolute;
@@ -28,6 +28,35 @@
             box-sizing: border-box;
             border-left: 1px solid #ddd;
             box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+        }
+        #toolbar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 260px;
+            height: 50px;
+            background-color: #2196F3;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+        .toolbar-btn {
+            padding: 8px 15px;
+            background-color: #fff;
+            color: #2196F3;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-right: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+            transition: all 0.2s;
+        }
+        .toolbar-btn:hover {
+            background-color: #f1f8ff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
         input[type=range] {
             width: 100%;
@@ -89,6 +118,9 @@
     </style>
 </head>
 <body>
+    <div id="toolbar">
+        <button class="toolbar-btn" id="fit-to-window-top">Anpassa modell till fönster</button>
+    </div>
     <div id="viewer"></div>
     <div id="controls">
         <h3>Sektionsvy</h3>
@@ -333,8 +365,8 @@
             // Set the reset-view as initially active
             document.getElementById('reset-view').classList.add('active');
             
-            // Setup fit to window button
-            document.getElementById('fit-to-window').addEventListener('click', function() {
+            // Function to fit model to window
+            function fitModelToWindow() {
                 if (model && viewer) {
                     // Beräkna modellens omgivande box
                     const box = new THREE.Box3().setFromObject(model);
@@ -386,7 +418,11 @@
                         btn.classList.remove('active');
                     });
                 }
-            });
+            }
+            
+            // Setup fit to window buttons
+            document.getElementById('fit-to-window').addEventListener('click', fitModelToWindow);
+            document.getElementById('fit-to-window-top').addEventListener('click', fitModelToWindow);
         }
     </script>
 </body>

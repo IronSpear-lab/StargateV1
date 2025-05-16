@@ -1454,57 +1454,7 @@
     // Definiera aktuell aktiv mapp (standardvärde: visa alla)
     let currentFolderId = null;
     
-    // Skapa en folder-selector ovanför PDF-tabellen
-    function createFolderSelector() {
-      // Ta bort befintlig selektor om den finns
-      const existingSelector = document.getElementById('folder-filter-container');
-      if (existingSelector) {
-        existingSelector.remove();
-      }
-      
-      // Skapa ny container
-      const container = document.createElement('div');
-      container.id = 'folder-filter-container';
-      container.className = 'mb-3 d-flex align-items-center';
-      
-      // Lägg till en etikett
-      const label = document.createElement('label');
-      label.textContent = 'Visa PDFer i mapp: ';
-      label.className = 'me-2';
-      container.appendChild(label);
-      
-      // Skapa val-dropdown
-      const select = document.createElement('select');
-      select.id = 'folder-filter';
-      select.className = 'form-select';
-      
-      // Lägg till "Alla" som första alternativ
-      const allOption = document.createElement('option');
-      allOption.value = '';
-      allOption.textContent = 'Alla mappar';
-      select.appendChild(allOption);
-      
-      // Lägg till alla tillgängliga mappar från folderStructure
-      folderStructure.forEach(folder => {
-        const option = document.createElement('option');
-        option.value = folder.id;
-        option.textContent = folder.name;
-        select.appendChild(option);
-      });
-      
-      // Lyssna på ändringar av val
-      select.addEventListener('change', (e) => {
-        const selectedValue = e.target.value;
-        currentFolderId = selectedValue ? parseInt(selectedValue) : null;
-        loadPdfFiles();
-      });
-      
-      container.appendChild(select);
-      
-      // Lägg till selektorn ovanför tabellen
-      const pdfList = document.querySelector('.pdf-list');
-      pdfList.parentNode.insertBefore(container, pdfList);
-    }
+    // Mapprullgardinsmenyn har tagits bort enligt önskemål
     
     // Load PDF files
     async function loadPdfFiles() {

@@ -4,6 +4,7 @@ import CssBaseline from '@mui/joy/CssBaseline';
 import Layout from './components/layout/Layout';
 import Dashboard from './pages/dashboard/Dashboard';
 import NotFoundPage from './pages/NotFoundPage';
+import ComingSoonPage from './pages/ComingSoonPage';
 
 // Vault pages
 import HomePage from './pages/vault/home/HomePage';
@@ -12,6 +13,9 @@ import ReviewPage from './pages/vault/review/ReviewPage';
 import FilesPage from './pages/vault/files/FilesPage';
 import VersionsPage from './pages/vault/versions/VersionsPage';
 import MeetingsPage from './pages/vault/meetings/MeetingsPage';
+
+// 3D Viewer pages
+import OverviewPage from './pages/3dviewer/overview';
 
 // Anpassa temat för att matcha bilden
 const theme = extendTheme({
@@ -66,6 +70,13 @@ function App() {
               <Route path="versions" element={<VersionsPage />} />
               <Route path="meetings" element={<MeetingsPage />} />
             </Route>
+            
+            {/* 3D Viewer routes */}
+            <Route path="3dviewer">
+              <Route path="overview" element={<OverviewPage />} />
+              <Route path="design" element={<ComingSoonPage title="3D Design" />} />
+              <Route path="construction" element={<ComingSoonPage title="Byggarbetsplats 3D" />} />
+            </Route>
           </Route>
           
           {/* 404 route */}
@@ -75,13 +86,5 @@ function App() {
     </CssVarsProvider>
   );
 }
-
-// Simple component to show for routes not yet implemented
-const ComingSoonPage = ({ title }: { title: string }) => (
-  <div style={{ padding: '20px' }}>
-    <h1>{title}</h1>
-    <p>Denna sida är under utveckling och kommer snart.</p>
-  </div>
-);
 
 export default App;

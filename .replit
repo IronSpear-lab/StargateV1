@@ -20,6 +20,10 @@ args = "backend_workflow"
 task = "workflow.run"
 args = "frontend_workflow"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "sectionbox_viewer"
+
 [[workflows.workflow]]
 name = "backend_workflow"
 author = "agent"
@@ -37,6 +41,15 @@ author = "agent"
 task = "shell.exec"
 args = "cd frontend && npm run dev"
 waitForPort = 5000
+
+[[workflows.workflow]]
+name = "sectionbox_viewer"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd Online3DViewer && python -m http.server 8080"
+waitForPort = 8080
 
 [deployment]
 run = ["sh", "-c", "cd frontend && npm install @mui/joy @emotion/react @emotion/styled @mui/material react-router-dom axios && npm install -g vite && vite --port 5000 && cd ../backend && pip install django djangorestframework django-cors-headers djangorestframework-simplejwt dj-database-url pillow && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
@@ -56,3 +69,7 @@ externalPort = 8000
 [[ports]]
 localPort = 8001
 externalPort = 3000
+
+[[ports]]
+localPort = 8080
+externalPort = 8080

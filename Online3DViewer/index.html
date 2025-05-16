@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>3D Viewer med Sektion-Box</title>
+    <script src="lib/three.min.js"></script>
+    <script src="engine/o3dv.min.js"></script>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        #viewer {
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 200px;
+        }
+        #controls {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 200px;
+            background: #f0f0f0;
+            overflow-y: auto;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        input[type=range] {
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="viewer"></div>
+    <div id="controls">
+        <h3>Section Box</h3>
+        <label>X min <input type="range" id="xMin" min="-50" max="0" value="-10"></label><br>
+        <label>X max <input type="range" id="xMax" min="0" max="50" value="10"></label><br>
+        <label>Y min <input type="range" id="yMin" min="-50" max="0" value="-10"></label><br>
+        <label>Y max <input type="range" id="yMax" min="0" max="50" value="10"></label><br>
+        <label>Z min <input type="range" id="zMin" min="-50" max="0" value="-10"></label><br>
+        <label>Z max <input type="range" id="zMax" min="0" max="50" value="10"></label><br>
+    </div>
+
+    <script>
+        const viewerElement = document.getElementById('viewer');
+        let viewer;
+        let planes = [];
+
+        // Initialize viewer when the page loads
+        window.addEventListener('load', function() {
+            if (typeof O3D !== 'undefined') {
+                viewer = new O3D.Viewer(viewerElement);
+                loadModel();
+            } else {
+                console.error('O3D library not loaded correctly');
+            }
+        });
+
+        // Ladda modellen
+        function loadModel() {
+            O3D.LoadModelFromUrlList(['models/sample.ifc'], function (model) {
+                viewer.AddModel(model);
+
+                // Skapa clipping planes
+                planes = [
+                    new THREE.Plane(new THREE.Vector3(1, 0, 0), 10),   // X min
+                    new THREE.Plane(new THREE.Vector3(-1, 0, 0), 10),  // X max
+                    new THREE.Plane(new THREE.Vector3(0, 1, 0), 10),   // Y min
+                    new THREE.Plane(new THREE.Vector3(0, -1, 0), 10),  // Y max
+                    new THREE.Plane(new THREE.Vector3(0, 0, 1), 10),   // Z min
+                    new THREE.Plane(new THREE.Vector3(0, 0, -1), 10)   // Z max
+                ];
+
+                viewer.viewer.impl.renderer.clippingPlanes = planes;
+                viewer.viewer.impl.renderer.localClippingEnabled = true;
+
+                setupControls();
+            });
+        }
+
+        function setupControls() {
+            const sliders = {
+                xMin: document.getElementById('xMin'),
+                xMax: document.getElementById('xMax'),
+                yMin: document.getElementById('yMin'),
+                yMax: document.getElementById('yMax'),
+                zMin: document.getElementById('zMin'),
+                zMax: document.getElementById('zMax'),
+            };
+
+            function updatePlanes() {
+                planes[0].constant = -parseFloat(sliders.xMin.value); // X min
+                planes[1].constant = parseFloat(sliders.xMax.value);  // X max
+                planes[2].constant = -parseFloat(sliders.yMin.value); // Y min
+                planes[3].constant = parseFloat(sliders.yMax.value);  // Y max
+                planes[4].constant = -parseFloat(sliders.zMin.value); // Z min
+                planes[5].constant = parseFloat(sliders.zMax.value);  // Z max
+                
+                // Request redraw
+                if (viewer && viewer.viewer && viewer.viewer.impl) {
+                    viewer.viewer.impl.invalidate(true);
+                }
+            }
+
+            Object.values(sliders).forEach(slider => {
+                slider.addEventListener('input', updatePlanes);
+            });
+
+            updatePlanes();
+        }
+    </script>
+</body>
+</html>

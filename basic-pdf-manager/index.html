@@ -586,20 +586,22 @@
     
     .pdf-viewer-container {
       flex: 1;
-      background-color: #525659;
+      background-color: #444;
       overflow-y: auto;
       overflow-x: auto;
       display: flex;
       justify-content: center;
       align-items: flex-start;
       padding: 3rem;
-      padding-bottom: 6rem; /* Lagom utrymme i botten för scrollbaren, precis ovanför kontrollfältet */
+      padding-bottom: 5rem; /* Utrymme i botten för scrollbaren och menyn */
       min-height: 100%;
       position: relative;
       box-sizing: border-box;
       /* Säkerställer att horisontell scrollbar visas vid behov */
       scrollbar-width: auto;
       scrollbar-color: #60cd18 rgba(0, 0, 0, 0.1);
+      /* Lägg till ett grönt streck i botten */
+      border-bottom: 4px solid #60cd18;
     }
     
     /* Stilar för scrollbars i moderna webbläsare */
@@ -627,20 +629,7 @@
       background-color: #60cd18; /* Samma gröna färg */
     }
     
-    /* Lägg till ett dedikerat område för scrollbar i botten */
-    .pdf-viewer-container:after {
-      content: '';
-      display: block;
-      height: 30px;
-      width: 100%;
-      background-color: rgba(0, 0, 0, 0.2);
-      position: fixed;
-      bottom: 50px;
-      left: 0;
-      right: 0;
-      z-index: 5;
-      pointer-events: none; /* Så att det inte blockerar klick */
-    }
+    /* Ta bort det dedikerade området för scrollbar då det inte behövs med ny layout */
     
     #canvas-wrapper {
       padding: 40px;
@@ -667,20 +656,19 @@
     .modern-pdf-controls {
       display: flex;
       align-items: center;
-      background: white;
-      padding: 12px 24px;
-      border-top: 2px solid #e5e7eb;
-      position: fixed;
+      background: #333;
+      padding: 10px 24px;
+      border-top: 1px solid #444;
+      position: absolute;
       bottom: 0; /* Placera kontrollfältet längst ner */
       left: 0;
       right: 0;
-      box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3);
       justify-content: space-between;
       z-index: 10;
-      /* Minskad höjd för kontrollfältet */
-      height: 50px;
+      /* Kontrollfältets höjd */
+      height: 48px;
       box-sizing: border-box;
-      background-color: white;
     }
     
     .nav-page-controls {

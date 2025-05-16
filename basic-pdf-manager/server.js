@@ -89,8 +89,51 @@ let folders = [
   }
 ];
 
-// In-memory PDF storage (ersätts senare med databas)
+// Använd databas för PDF-lagring
 let pdfFiles = [];
+
+// Hjälpfunktion för att spara alla PDF-filer till databasen
+async function savePDFFilesToDB() {
+  try {
+    // Radera befintliga PDFer i databasen och spara alla nuvarande
+    await db.delete(schema.pdfDocuments);
+    
+    if (pdfFiles.length > 0) {
+      await db.insert(schema.pdfDocuments).values(
+        pdfFiles.map(pdf => ({
+          id: pdf.id,
+          filename: pdf.filename,
+          description: pdf.description,
+          originalFilename: pdf.originalFilename,
+          storedFilename: pdf.storedFilename,
+          fileUrl: pdf.fileUrl,
+          size: pdf.size,
+          uploadedBy: pdf.uploadedBy,
+          uploadedAt: pdf.uploadedAt,
+          folderId: pdf.folderId,
+          versionNumber: pdf.versionNumber
+        }))
+      );
+    }
+    console.log(`Sparade ${pdfFiles.length} PDF-filer till databasen`);
+  } catch (error) {
+    console.error('Fel vid spara PDF-filer till databasen:', error);
+  }
+}
+
+// Hjälpfunktion för att ladda alla PDF-filer från databasen
+async function loadPDFFilesFromDB() {
+  try {
+    const dbPdfFiles = await db.select().from(schema.pdfDocuments);
+    
+    if (dbPdfFiles && dbPdfFiles.length > 0) {
+      pdfFiles = dbPdfFiles;
+      console.log(`Laddat ${pdfFiles.length} PDF-filer från databasen`);
+    }
+  } catch (error) {
+    console.error('Fel vid laddning av PDF-filer från databasen:', error);
+  }
+}
 
 // Login endpoint
 app.post('/api/login', (req, res) => {
@@ -132,7 +175,7 @@ app.get('/api/check-auth', (req, res) => {
 });
 
 // Upload PDF file endpoint
-app.post('/api/upload', upload.single('file'), (req, res) => {
+app.post('/api/upload', upload.single('file'), async (req, res) => {
   try {
     if (!req.session.user) {
       return res.status(401).json({ success: false, message: 'Inte inloggad' });
@@ -169,8 +212,17 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
       versionNumber: 1                  // Första versionen av dokumentet
     };
 
-    // Spara PDF-objektet
+    // Spara PDF-objektet i lokal array
     pdfFiles.push(pdfFile);
+    
+    // Spara till databasen för permanent lagring
+    try {
+      await db.insert(schema.pdfDocuments).values(pdfFile);
+      console.log(`PDF sparad till databas: ${pdfFile.id}`);
+    } catch (dbError) {
+      console.error('Fel vid lagring av PDF i databas:', dbError);
+      // Fortsätt trots DB-fel, använder fortfarande in-memory-lagring
+    }
 
     res.status(200).json({ success: true, file: pdfFile });
   } catch (error) {
@@ -225,7 +277,7 @@ app.get('/api/pdfs/:id', (req, res) => {
 });
 
 // Delete PDF endpoint
-app.delete('/api/pdfs/:id', (req, res) => {
+app.delete('/api/pdfs/:id', async (req, res) => {
   if (!req.session.user) {
     return res.status(401).json({ success: false, message: 'Inte inloggad' });
   }
@@ -246,6 +298,15 @@ app.delete('/api/pdfs/:id', (req, res) => {
     }
   } catch (error) {
     console.error('Fel vid borttagning av fil:', error);
+  }
+
+  // Ta bort från databas
+  try {
+    await db.delete(schema.pdfDocuments).where(eq(schema.pdfDocuments.id, req.params.id));
+    console.log(`PDF borttagen från databas: ${req.params.id}`);
+  } catch (dbError) {
+    console.error('Fel vid borttagning av PDF från databas:', dbError);
+    // Fortsätt trots DB-fel, använder fortfarande in-memory-lagring
   }
 
   // Ta bort från arrayen

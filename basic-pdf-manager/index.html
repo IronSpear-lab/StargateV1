@@ -1611,10 +1611,29 @@
       
       // Add click event to delete icons
       document.querySelectorAll('.delete-icon').forEach(element => {
-        element.addEventListener('click', (e) => {
+        element.addEventListener('click', async (e) => {
           e.stopPropagation();
           const id = element.getAttribute('data-id');
-          // Implement delete functionality
+          const pdf = pdfFiles.find(p => p.id === id);
+          
+          if (confirm(`Är du säker på att du vill radera "${pdf ? pdf.filename : 'denna PDF'}"?`)) {
+            try {
+              const response = await fetch(`/api/pdfs/${id}`, {
+                method: 'DELETE'
+              });
+              
+              if (response.ok) {
+                // Ta bort PDF från listan och uppdatera vyn
+                await loadPdfFiles();
+              } else {
+                const data = await response.json();
+                alert(`Kunde inte radera PDF: ${data.message || 'Okänt fel'}`);
+              }
+            } catch (error) {
+              console.error('Error deleting PDF:', error);
+              alert('Ett fel uppstod när PDF-filen skulle raderas');
+            }
+          }
         });
       });
     }

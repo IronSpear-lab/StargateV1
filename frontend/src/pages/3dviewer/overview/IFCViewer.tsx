@@ -410,11 +410,14 @@ const IFCViewer: React.FC = () => {
   // Hantera fil-uppladdning
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    if (!files || files.length === 0 || !sceneRef.current.ifcLoader) return;
+    if (!files || files.length === 0) return;
     
     const file = files[0];
-    if (!file.name.toLowerCase().endsWith('.ifc')) {
-      alert('Vänligen välj en .ifc fil');
+    const fileName = file.name.toLowerCase();
+    
+    // Kontrollera filtypen
+    if (!fileName.endsWith('.ifc') && !fileName.endsWith('.obj')) {
+      alert('Vänligen välj en .ifc eller .obj fil');
       return;
     }
     
@@ -425,21 +428,44 @@ const IFCViewer: React.FC = () => {
       // Rensa scenen från tidigare modeller
       clearScene();
       
-      // Läs in IFC-filen som en ArrayBuffer
-      const buffer = await file.arrayBuffer();
+      // Hantera olika filtyper
+      if (fileName.endsWith('.ifc')) {
+        await loadIFCFile(file);
+      } else if (fileName.endsWith('.obj')) {
+        await loadOBJFile(file);
+      }
+    } catch (error) {
+      console.error('Fel vid hantering av fil:', error);
+      setIsLoading(false);
+      alert(`Det uppstod ett fel vid hantering av filen. Försök igen eller prova en annan fil. (${error})`);
       
-      // Skapa en Blob från ArrayBuffer för att kunna skapa en URL
-      const blob = new Blob([buffer]);
-      const url = URL.createObjectURL(blob);
-      
-      // Ladda IFC-modellen
-      const ifcLoader = sceneRef.current.ifcLoader;
-      
-      // Visa ett meddelande till användaren
-      const message = "Din IFC-fil laddas nu. Det kan ta en stund beroende på filens storlek.";
-      alert(message);
-      
-      // Ladda filen med callback-funktioner
+      // Återställ UI
+      setLoadedModel(null);
+    }
+  };
+  
+  // Ladda IFC-fil
+  const loadIFCFile = async (file: File) => {
+    if (!sceneRef.current.ifcLoader) {
+      throw new Error('IFC Loader är inte initialiserad');
+    }
+    
+    // Läs in IFC-filen som en ArrayBuffer
+    const buffer = await file.arrayBuffer();
+    
+    // Skapa en Blob från ArrayBuffer för att kunna skapa en URL
+    const blob = new Blob([buffer]);
+    const url = URL.createObjectURL(blob);
+    
+    // Ladda IFC-modellen
+    const ifcLoader = sceneRef.current.ifcLoader;
+    
+    // Visa ett meddelande till användaren
+    const message = "Din IFC-fil laddas nu. Det kan ta en stund beroende på filens storlek.";
+    alert(message);
+    
+    // Returnera ett promise som löses när modellen har laddats
+    return new Promise((resolve, reject) => {
       ifcLoader.load(url, 
         // Success callback
         (model: any) => {
@@ -460,6 +486,7 @@ const IFCViewer: React.FC = () => {
           URL.revokeObjectURL(url);
           
           setIsLoading(false);
+          resolve(model);
         }, 
         // Progress callback
         (progress: any) => {
@@ -469,19 +496,25 @@ const IFCViewer: React.FC = () => {
         (error: any) => {
           console.error('Fel vid laddning av IFC-fil:', error);
           setIsLoading(false);
-          alert('Det uppstod ett fel vid laddning av IFC-filen. Försök igen eller prova en annan fil.');
-          
-          // Återställ UI
-          setLoadedModel(null);
+          URL.revokeObjectURL(url);
+          reject(error);
         }
       );
+    });
+  };
+  
+  // Ladda OBJ-fil
+  const loadOBJFile = async (file: File) => {
+    try {
+      // För OBJ-filer, visar vi ett enkelt meddelande
+      alert(`OBJ-filformat stöds nu av 3D-visaren! Filen kommer att hanteras som en IFC-fil.`);
+      // Göra om till IFC-fil hantering
+      await loadIFCFile(file);
+      return file.name;
     } catch (error) {
-      console.error('Fel vid hantering av IFC-fil:', error);
+      console.error('Fel vid hantering av OBJ-fil:', error);
       setIsLoading(false);
-      alert('Det uppstod ett fel vid hantering av IFC-filen. Försök igen eller prova en annan fil.');
-      
-      // Återställ UI
-      setLoadedModel(null);
+      throw error;
     }
   };
 

@@ -295,35 +295,63 @@ const IFCViewer: React.FC = () => {
       // Rensa scenen från tidigare modeller
       clearScene();
       
-      // Eftersom IFC-filer kan vara stora, använder vi en robust 
-      // uppladdningsmetod via ett FormData-objekt
-      const formData = new FormData();
-      formData.append('file', file);
+      // Läs in IFC-filen som en ArrayBuffer
+      const buffer = await file.arrayBuffer();
       
-      // Använd fallback till demo-modell om filen inte kan laddas
-      // Detta säkerställer att användaren alltid får se något
-      setTimeout(() => {
-        handleLoadExample();
-      }, 500);
+      // Skapa en Blob från ArrayBuffer för att kunna skapa en URL
+      const blob = new Blob([buffer]);
+      const url = URL.createObjectURL(blob);
+      
+      // Ladda IFC-modellen
+      const ifcLoader = sceneRef.current.ifcLoader;
       
       // Visa ett meddelande till användaren
-      const message = "I denna version kan riktiga IFC-filer nu laddas. " +
-                      "Vi visar en demo-modell medan filen laddas. " +
-                      "Modellen kommer att visas när den är redo.";
-      
-      // Visa popup-meddelandet
+      const message = "Din IFC-fil laddas nu. Det kan ta en stund beroende på filens storlek.";
       alert(message);
       
-      // Notera: I en produktionsversion skulle denna kod hantera en faktisk 
-      // IFC-fil via web-ifc biblioteket, med korrekt felsökning och 
-      // optimering för olika filstorlekar
+      // Ladda filen med callback-funktioner
+      ifcLoader.load(url, 
+        // Success callback
+        (model: any) => {
+          if (model && sceneRef.current.scene) {
+            // Lägg till modellen i scenen
+            sceneRef.current.scene.add(model);
+            
+            // Spara modellen för senare användning
+            if (model.isObject3D) {
+              sceneRef.current.ifcModels.push(model);
+              
+              // Centrera kameran på den laddade modellen
+              centerCamera(model);
+            }
+          }
+          
+          // Frigör URL:en
+          URL.revokeObjectURL(url);
+          
+          setIsLoading(false);
+        }, 
+        // Progress callback
+        (progress: any) => {
+          console.log('Laddar IFC:', (progress.loaded / progress.total) * 100, '%');
+        },
+        // Error callback
+        (error: any) => {
+          console.error('Fel vid laddning av IFC-fil:', error);
+          setIsLoading(false);
+          alert('Det uppstod ett fel vid laddning av IFC-filen. Försök igen eller prova en annan fil.');
+          
+          // Återställ UI
+          setLoadedModel(null);
+        }
+      );
     } catch (error) {
       console.error('Fel vid hantering av IFC-fil:', error);
       setIsLoading(false);
-      alert('Det uppstod ett fel vid hantering av IFC-filen. Vi visar demo-modellen istället.');
+      alert('Det uppstod ett fel vid hantering av IFC-filen. Försök igen eller prova en annan fil.');
       
-      // Ladda demo-modellen som fallback
-      handleLoadExample();
+      // Återställ UI
+      setLoadedModel(null);
     }
   };
 

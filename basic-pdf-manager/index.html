@@ -1836,6 +1836,12 @@
           
           // Add zoom and pan functionality
           setupZoomAndPan(pdfViewerContainer, canvas);
+          
+          // Uppdatera zoom-nivå i det gröna fältet när PDF:en öppnas
+          const zoomLevelElement = document.getElementById('zoom-level');
+          if (zoomLevelElement) {
+            zoomLevelElement.textContent = `${Math.round(scale * 100)}%`;
+          }
         }
         
         // Använd aktuell scale för viewport
@@ -1923,16 +1929,23 @@
       renderPage(pageNum);
     }
     
-    // Update page info
+    // Update page info and zoom display
     function updatePageInfo() {
       if (!pdfDoc) {
         pageInfo.textContent = 'Ingen PDF laddad';
         return;
       }
       
+      // Uppdatera sidinformation
       pageInfo.textContent = `Sida ${pageNum} av ${pdfDoc.numPages}`;
       prevPageBtn.disabled = pageNum <= 1;
       nextPageBtn.disabled = pageNum >= pdfDoc.numPages;
+      
+      // Uppdatera zoom-nivå i det gröna fältet med aktuell scale
+      const zoomLevelElement = document.getElementById('zoom-level');
+      if (zoomLevelElement) {
+        zoomLevelElement.textContent = `${Math.round(scale * 100)}%`;
+      }
     }
     
     // Setup zoom and pan with improved canvas handling

@@ -592,6 +592,7 @@
       justify-content: center;
       align-items: flex-start;
       padding: 3rem;
+      padding-bottom: 8rem; /* Ökat utrymme i botten för scrollbaren */
       min-height: 100%;
       position: relative;
       box-sizing: border-box;
@@ -645,13 +646,16 @@
       background: white;
       padding: 16px 24px;
       border-top: 2px solid #e5e7eb;
-      position: absolute;
+      position: fixed;
       bottom: 0;
       left: 0;
       right: 0;
       box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
       justify-content: space-between;
       z-index: 10;
+      /* Minska höjden för att ge mer utrymme för scrollbaren */
+      height: 70px;
+      box-sizing: border-box;
     }
     
     .nav-page-controls {

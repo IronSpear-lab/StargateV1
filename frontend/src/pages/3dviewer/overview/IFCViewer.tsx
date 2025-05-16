@@ -303,26 +303,98 @@ const IFCViewer: React.FC = () => {
     sceneRef.current.controls.target.copy(center);
   };
   
+  // Referens för att hålla klippplan och hjälpare
+  const planesRef = useRef<{
+    planes: THREE.Plane[];
+    helpers: THREE.PlaneHelper[];
+    transformControls?: any;
+  }>({
+    planes: [],
+    helpers: []
+  });
+  
   // Sectioning planes
   const [sectionsEnabled, setSectionsEnabled] = useState(false);
+  
   const toggleSections = () => {
     setSectionsEnabled(!sectionsEnabled);
     
-    if (!sceneRef.current.renderer) return;
+    if (!sceneRef.current.renderer || !sceneRef.current.scene) return;
     
     if (!sectionsEnabled) {
       // Aktivera sectioning
       const planes = [
-        new THREE.Plane(new THREE.Vector3(1, 0, 0), 0),
-        new THREE.Plane(new THREE.Vector3(0, 1, 0), 0),
-        new THREE.Plane(new THREE.Vector3(0, 0, 1), 0)
+        new THREE.Plane(new THREE.Vector3(1, 0, 0), 0),    // Höger-vänster
+        new THREE.Plane(new THREE.Vector3(0, 1, 0), 0),    // Upp-ner
+        new THREE.Plane(new THREE.Vector3(0, 0, 1), 0)     // Fram-bak
       ];
+      
+      // Skapa hjälpare för att visualisera planen
+      const helpers = planes.map((plane, index) => {
+        const colors = [0xff0000, 0x00ff00, 0x0000ff]; // RGB för de olika planen
+        const helper = new THREE.PlaneHelper(plane, 10, colors[index]);
+        sceneRef.current.scene?.add(helper);
+        return helper;
+      });
+      
+      // Spara referenser
+      planesRef.current.planes = planes;
+      planesRef.current.helpers = helpers;
+      
+      // Aktivera klippplan i renderaren
       sceneRef.current.renderer.localClippingEnabled = true;
       sceneRef.current.renderer.clippingPlanes = planes;
+      
+      // Skapa transformkontroller för det första planet
+      // Vi behöver importera transform controls dynamiskt först
+      import('three/examples/jsm/controls/TransformControls').then(({ TransformControls }) => {
+        if (!sceneRef.current.camera || !sceneRef.current.renderer) return;
+        
+        // Skapa kontroll
+        const controls = new TransformControls(
+          sceneRef.current.camera, 
+          sceneRef.current.renderer.domElement
+        );
+        
+        // Koppla till första planet
+        controls.attach(helpers[0]);
+        controls.setMode('translate'); // Sätt till dragläge
+        sceneRef.current.scene?.add(controls);
+        
+        // Lägg till lyssnare för förändringar
+        controls.addEventListener('change', () => {
+          // Uppdatera klippplan baserat på hjälparens position
+          if (planesRef.current.helpers[0]) {
+            const normal = new THREE.Vector3();
+            planesRef.current.helpers[0].plane.normal.copy(normal);
+            const point = planesRef.current.helpers[0].position;
+            planesRef.current.planes[0].setFromNormalAndCoplanarPoint(normal, point);
+          }
+        });
+        
+        // Spara kontroll referens
+        planesRef.current.transformControls = controls;
+      });
+      
     } else {
       // Inaktivera sectioning
       sceneRef.current.renderer.localClippingEnabled = false;
       sceneRef.current.renderer.clippingPlanes = [];
+      
+      // Ta bort hjälpare från scenen
+      planesRef.current.helpers.forEach(helper => {
+        sceneRef.current.scene?.remove(helper);
+      });
+      
+      // Ta bort transformkontroll
+      if (planesRef.current.transformControls) {
+        sceneRef.current.scene?.remove(planesRef.current.transformControls);
+        planesRef.current.transformControls = undefined;
+      }
+      
+      // Rensa referenser
+      planesRef.current.planes = [];
+      planesRef.current.helpers = [];
     }
   };
   
@@ -711,10 +783,10 @@ const IFCViewer: React.FC = () => {
               size="sm" 
               variant="solid" 
               color={sectionsEnabled ? "warning" : "neutral"} 
-              sx={{ minWidth: '80px' }}
+              sx={{ minWidth: '100px' }}
               onClick={toggleSections}
             >
-              {sectionsEnabled ? 'Sektion PÅ' : 'Sektion AV'}
+              {sectionsEnabled ? 'Sektion PÅ ✓' : 'Sektion AV'}
             </Button>
           </Box>
         </Box>

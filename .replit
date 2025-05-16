@@ -30,8 +30,8 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd backend && python manage.py runserver 0.0.0.0:3001"
-waitForPort = 3001
+args = "cd backend && python manage.py runserver 0.0.0.0:8001"
+waitForPort = 8001
 
 [[workflows.workflow]]
 name = "frontend_workflow"

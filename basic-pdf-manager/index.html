@@ -1057,39 +1057,39 @@
     </div>
   </div>
 
-  <!-- Modal för uppladdning -->
+  <!-- Modern modal för uppladdning -->
   <div id="upload-modal" class="modal upload-modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Ladda upp PDF</h2>
-        <button class="close-modal">&times;</button>
+    <div class="modal-content" style="border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 500px;">
+      <div class="modal-header" style="border-bottom: 1px solid #eaeaea; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between;">
+        <h2 style="font-size: 18px; font-weight: 600; margin: 0; color: #333;">Ladda upp PDF</h2>
+        <button class="close-modal" style="background: none; border: none; font-size: 22px; cursor: pointer; color: #666; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%;">&times;</button>
       </div>
-      <div class="modal-body">
-        <div id="upload-alert" class="alert alert-danger" style="display: none;"></div>
+      <div class="modal-body" style="padding: 24px;">
+        <div id="upload-alert" class="alert alert-danger" style="display: none; border-radius: 8px; margin-bottom: 16px;"></div>
         
-        <div id="upload-area" class="upload-area">
-          <svg class="upload-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <div id="upload-area" class="upload-area" style="border: 2px dashed #d0d0d0; border-radius: 12px; padding: 30px; background-color: #f9fafb; text-align: center; margin-bottom: 24px; transition: all 0.2s;">
+          <svg class="upload-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 48px; height: 48px; margin-bottom: 16px;">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
             <polyline points="17 8 12 3 7 8"></polyline>
             <line x1="12" y1="3" x2="12" y2="15"></line>
           </svg>
-          <button class="upload-btn">Välj filer att ladda upp</button>
-          <p class="upload-text">eller dra och släpp filer här</p>
-          <input type="file" id="file-input" class="file-input" accept=".pdf">
+          <button class="upload-btn" style="background-color: #6366f1; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 500; margin-bottom: 12px; transition: all 0.2s;">Välj filer att ladda upp</button>
+          <p class="upload-text" style="color: #666; margin: 0;">eller dra och släpp filer här</p>
+          <input type="file" id="file-input" class="file-input" accept=".pdf" style="display: none;">
         </div>
         
-        <div class="form-group" style="display: none;" id="filename-group">
-          <label for="file-name">Filnamn</label>
-          <input type="text" id="file-name" placeholder="Ange filnamn">
+        <div class="form-group" style="display: none; margin-bottom: 16px;" id="filename-group">
+          <label for="file-name" style="display: block; margin-bottom: 8px; font-weight: 500; color: #333;">Filnamn</label>
+          <input type="text" id="file-name" placeholder="Ange filnamn" style="width: 100%; padding: 12px; border: 1px solid #d0d0d0; border-radius: 8px; font-size: 14px; transition: border-color 0.2s;">
         </div>
-        <div class="form-group" style="display: none;" id="description-group">
-          <label for="file-description">Beskrivning</label>
-          <input type="text" id="file-description" placeholder="Ange beskrivning (valfritt)">
+        <div class="form-group" style="display: none; margin-bottom: 16px;" id="description-group">
+          <label for="file-description" style="display: block; margin-bottom: 8px; font-weight: 500; color: #333;">Beskrivning</label>
+          <input type="text" id="file-description" placeholder="Ange beskrivning (valfritt)" style="width: 100%; padding: 12px; border: 1px solid #d0d0d0; border-radius: 8px; font-size: 14px; transition: border-color 0.2s;">
         </div>
       </div>
-      <div class="modal-footer">
-        <button class="btn-secondary close-modal" id="cancel-upload-btn">Avbryt</button>
-        <button id="save-pdf-btn" class="btn-primary">Ladda upp</button>
+      <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid #eaeaea; display: flex; justify-content: flex-end; gap: 12px;">
+        <button class="btn-secondary close-modal" id="cancel-upload-btn" style="padding: 10px 16px; border-radius: 8px; background-color: #f5f5f5; color: #333; border: 1px solid #ddd; font-weight: 500;">Avbryt</button>
+        <button id="save-pdf-btn" class="btn-primary" style="padding: 10px 20px; border-radius: 8px; background-color: #6366f1; color: white; border: none; font-weight: 500; box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2);">Ladda upp</button>
       </div>
     </div>
   </div>
@@ -1661,37 +1661,7 @@
         
         if (data.success) {
           folderStructure = data.folders || [];
-          // Skapa dropdown-lista för val av mapp
-          const folderSelect = document.createElement('select');
-          folderSelect.id = 'folder-select';
-          folderSelect.className = 'form-control';
-          
-          folderStructure.forEach(folder => {
-            const option = document.createElement('option');
-            option.value = folder.id;
-            option.textContent = folder.name;
-            folderSelect.appendChild(option);
-          });
-          
-          // Lägg till select i ett form-group
-          const folderGroup = document.createElement('div');
-          folderGroup.className = 'form-group';
-          folderGroup.id = 'folder-group';
-          
-          const label = document.createElement('label');
-          label.setAttribute('for', 'folder-select');
-          label.textContent = 'Mapp';
-          
-          folderGroup.appendChild(label);
-          folderGroup.appendChild(folderSelect);
-          
-          // Lägg till efter description-gruppen
-          const descriptionGroup = document.getElementById('description-group');
-          if (descriptionGroup.nextSibling) {
-            descriptionGroup.parentNode.insertBefore(folderGroup, descriptionGroup.nextSibling);
-          } else {
-            descriptionGroup.parentNode.appendChild(folderGroup);
-          }
+          // Mappväljaren har tagits bort enligt önskemål
         }
       } catch (error) {
         console.error('Error loading folders:', error);

@@ -92,46 +92,37 @@ let folders = [
 // Använd databas för PDF-lagring
 let pdfFiles = [];
 
-// Hjälpfunktion för att spara alla PDF-filer till databasen
-async function savePDFFilesToDB() {
+// Hjälpfunktion för att spara alla PDF-filer till en JSON-fil
+function savePDFFilesToFile() {
   try {
-    // Radera befintliga PDFer i databasen och spara alla nuvarande
-    await db.delete(schema.pdfDocuments);
-    
-    if (pdfFiles.length > 0) {
-      await db.insert(schema.pdfDocuments).values(
-        pdfFiles.map(pdf => ({
-          id: pdf.id,
-          filename: pdf.filename,
-          description: pdf.description,
-          originalFilename: pdf.originalFilename,
-          storedFilename: pdf.storedFilename,
-          fileUrl: pdf.fileUrl,
-          size: pdf.size,
-          uploadedBy: pdf.uploadedBy,
-          uploadedAt: pdf.uploadedAt,
-          folderId: pdf.folderId,
-          versionNumber: pdf.versionNumber
-        }))
-      );
-    }
-    console.log(`Sparade ${pdfFiles.length} PDF-filer till databasen`);
+    const pdfDataFile = path.join(__dirname, 'pdf_data.json');
+    fs.writeFileSync(pdfDataFile, JSON.stringify(pdfFiles, null, 2));
+    console.log(`Sparade ${pdfFiles.length} PDF-filer till ${pdfDataFile}`);
+    return true;
   } catch (error) {
-    console.error('Fel vid spara PDF-filer till databasen:', error);
+    console.error('Fel vid spara PDF-filer till fil:', error);
+    return false;
   }
 }
 
-// Hjälpfunktion för att ladda alla PDF-filer från databasen
-async function loadPDFFilesFromDB() {
+// Hjälpfunktion för att ladda alla PDF-filer från en JSON-fil
+function loadPDFFilesFromFile() {
   try {
-    const dbPdfFiles = await db.select().from(schema.pdfDocuments);
-    
-    if (dbPdfFiles && dbPdfFiles.length > 0) {
-      pdfFiles = dbPdfFiles;
-      console.log(`Laddat ${pdfFiles.length} PDF-filer från databasen`);
+    const pdfDataFile = path.join(__dirname, 'pdf_data.json');
+    if (fs.existsSync(pdfDataFile)) {
+      const data = fs.readFileSync(pdfDataFile, 'utf8');
+      const savedPdfFiles = JSON.parse(data);
+      
+      if (Array.isArray(savedPdfFiles) && savedPdfFiles.length > 0) {
+        pdfFiles = savedPdfFiles;
+        console.log(`Laddat ${pdfFiles.length} PDF-filer från ${pdfDataFile}`);
+        return true;
+      }
     }
+    return false;
   } catch (error) {
-    console.error('Fel vid laddning av PDF-filer från databasen:', error);
+    console.error('Fel vid laddning av PDF-filer från fil:', error);
+    return false;
   }
 }
 
@@ -175,7 +166,7 @@ app.get('/api/check-auth', (req, res) => {
 });
 
 // Upload PDF file endpoint
-app.post('/api/upload', upload.single('file'), async (req, res) => {
+app.post('/api/upload', upload.single('file'), (req, res) => {
   try {
     if (!req.session.user) {
       return res.status(401).json({ success: false, message: 'Inte inloggad' });
@@ -215,14 +206,8 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
     // Spara PDF-objektet i lokal array
     pdfFiles.push(pdfFile);
     
-    // Spara till databasen för permanent lagring
-    try {
-      await db.insert(schema.pdfDocuments).values(pdfFile);
-      console.log(`PDF sparad till databas: ${pdfFile.id}`);
-    } catch (dbError) {
-      console.error('Fel vid lagring av PDF i databas:', dbError);
-      // Fortsätt trots DB-fel, använder fortfarande in-memory-lagring
-    }
+    // Spara till fil för permanent lagring
+    savePDFFilesToFile();
 
     res.status(200).json({ success: true, file: pdfFile });
   } catch (error) {
@@ -241,7 +226,7 @@ app.get('/api/folders', (req, res) => {
 });
 
 // Get PDF list endpoint
-app.get('/api/pdfs', async (req, res) => {
+app.get('/api/pdfs', (req, res) => {
   if (!req.session.user) {
     return res.status(401).json({ success: false, message: 'Inte inloggad' });
   }
@@ -249,9 +234,9 @@ app.get('/api/pdfs', async (req, res) => {
   const folderId = req.query.folderId ? parseInt(req.query.folderId) : null;
   
   try {
-    // Försök att ladda PDFs från databas om listan är tom
+    // Försök att ladda PDFs från fil om listan är tom
     if (pdfFiles.length === 0) {
-      await loadPDFFilesFromDB();
+      loadPDFFilesFromFile();
     }
 
     // Filtrera på mapp om angett
@@ -287,7 +272,7 @@ app.get('/api/pdfs/:id', (req, res) => {
 });
 
 // Delete PDF endpoint
-app.delete('/api/pdfs/:id', async (req, res) => {
+app.delete('/api/pdfs/:id', (req, res) => {
   if (!req.session.user) {
     return res.status(401).json({ success: false, message: 'Inte inloggad' });
   }
@@ -310,17 +295,11 @@ app.delete('/api/pdfs/:id', async (req, res) => {
     console.error('Fel vid borttagning av fil:', error);
   }
 
-  // Ta bort från databas
-  try {
-    await db.delete(schema.pdfDocuments).where(eq(schema.pdfDocuments.id, req.params.id));
-    console.log(`PDF borttagen från databas: ${req.params.id}`);
-  } catch (dbError) {
-    console.error('Fel vid borttagning av PDF från databas:', dbError);
-    // Fortsätt trots DB-fel, använder fortfarande in-memory-lagring
-  }
-
   // Ta bort från arrayen
   pdfFiles.splice(pdfIndex, 1);
+  
+  // Spara den uppdaterade listan till fil
+  savePDFFilesToFile();
 
   res.status(200).json({ success: true });
 });
@@ -330,15 +309,13 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Ladda PDF-filer från databasen när servern startar
-(async () => {
-  try {
-    await loadPDFFilesFromDB();
-    console.log('Databasanslutning klar, PDF-filer laddade');
-  } catch (error) {
-    console.error('Kunde inte ladda PDF-filer från databas vid uppstart:', error);
-  }
-})();
+// Ladda PDF-filer från fil när servern startar
+const loadedFiles = loadPDFFilesFromFile();
+if (loadedFiles) {
+  console.log('PDF-filer laddade från fil');
+} else {
+  console.log('Inga sparade PDF-filer hittades, startar med tom lista');
+}
 
 // Start server
 app.listen(port, '0.0.0.0', () => {
@@ -346,14 +323,13 @@ app.listen(port, '0.0.0.0', () => {
   console.log(`Öppna PDF-hanteraren i din webbläsare: http://0.0.0.0:${port}/`);
 });
 
-// Spara PDF-filer till databasen vid avstängning
-process.on('SIGINT', async () => {
-  console.log('Server stängs ner, sparar PDF-filer till databas...');
-  try {
-    await savePDFFilesToDB();
-    console.log('PDF-filer sparade till databas');
-  } catch (error) {
-    console.error('Fel vid sparande av PDF-filer till databas vid avstängning:', error);
+// Spara PDF-filer till fil vid avstängning
+process.on('SIGINT', () => {
+  console.log('Server stängs ner, sparar PDF-filer till fil...');
+  if (savePDFFilesToFile()) {
+    console.log('PDF-filer sparade till fil');
+  } else {
+    console.error('Fel vid sparande av PDF-filer vid avstängning');
   }
   process.exit(0);
 });

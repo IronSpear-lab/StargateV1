@@ -588,12 +588,12 @@
       flex: 1;
       background-color: #444;
       overflow-y: auto;
-      overflow-x: auto;
+      overflow-x: scroll; /* Tvinga fram horisontell scrollbar */
       display: flex;
       justify-content: center;
       align-items: flex-start;
       padding: 3rem;
-      padding-bottom: 5rem; /* Utrymme i botten för scrollbaren och menyn */
+      padding-bottom: 6rem; /* Mer utrymme i botten för scrollbaren och menyn */
       min-height: 100%;
       position: relative;
       box-sizing: border-box;
@@ -607,7 +607,7 @@
     /* Stilar för scrollbars i moderna webbläsare */
     .pdf-viewer-container::-webkit-scrollbar {
       width: 16px;
-      height: 20px; /* Större höjd på horisontell scrollbar */
+      height: 30px; /* Extra stor höjd för horisontell scrollbar */
     }
     
     .pdf-viewer-container::-webkit-scrollbar-track {
@@ -624,9 +624,36 @@
     
     /* Extra stilar för att förbättra horisontell scrollbar synlighet */
     .pdf-viewer-container::-webkit-scrollbar-thumb:horizontal {
-      min-width: 50px; /* Minsta bredd för horisontell tumme */
-      height: 20px;
+      min-width: 80px; /* Större minsta bredd för horisontell tumme */
+      height: 30px;
       background-color: #60cd18; /* Samma gröna färg */
+    }
+    
+    /* Dedikerad horisontell scrollbar som alltid visas */
+    .custom-horizontal-scrollbar {
+      position: absolute;
+      bottom: 48px; /* Precis ovanför kontrollfältet */
+      left: 0;
+      right: 0;
+      height: 20px;
+      background: rgba(0, 0, 0, 0.2);
+      z-index: 20;
+      overflow: hidden;
+      border-radius: 0;
+    }
+    
+    .custom-horizontal-scrollbar-thumb {
+      position: absolute;
+      height: 20px;
+      background-color: #60cd18;
+      border-radius: 10px;
+      min-width: 50px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    .custom-horizontal-scrollbar-thumb:hover {
+      background-color: #55b516;
     }
     
     /* Ta bort det dedikerade området för scrollbar då det inte behövs med ny layout */
@@ -665,7 +692,7 @@
       right: 0;
       box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3);
       justify-content: space-between;
-      z-index: 10;
+      z-index: 5; /* Lägre z-index så att scrollbar kan visas över */
       /* Kontrollfältets höjd */
       height: 48px;
       box-sizing: border-box;

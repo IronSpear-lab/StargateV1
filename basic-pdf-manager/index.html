@@ -593,7 +593,7 @@
       justify-content: center;
       align-items: flex-start;
       padding: 3rem;
-      padding-bottom: 18rem; /* Extremt mycket utrymme i botten för scrollbaren */
+      padding-bottom: 6rem; /* Lagom utrymme i botten för scrollbaren, precis ovanför kontrollfältet */
       min-height: 100%;
       position: relative;
       box-sizing: border-box;
@@ -627,6 +627,21 @@
       background-color: #60cd18; /* Samma gröna färg */
     }
     
+    /* Lägg till ett dedikerat område för scrollbar i botten */
+    .pdf-viewer-container:after {
+      content: '';
+      display: block;
+      height: 30px;
+      width: 100%;
+      background-color: rgba(0, 0, 0, 0.2);
+      position: fixed;
+      bottom: 50px;
+      left: 0;
+      right: 0;
+      z-index: 5;
+      pointer-events: none; /* Så att det inte blockerar klick */
+    }
+    
     #canvas-wrapper {
       padding: 40px;
       display: inline-flex;
@@ -653,24 +668,19 @@
       display: flex;
       align-items: center;
       background: white;
-      padding: 16px 24px;
+      padding: 12px 24px;
       border-top: 2px solid #e5e7eb;
       position: fixed;
-      bottom: 45px; /* Flytta upp kontrollfältet ordentligt för att ge plats för scrollbaren */
+      bottom: 0; /* Placera kontrollfältet längst ner */
       left: 0;
       right: 0;
       box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
       justify-content: space-between;
       z-index: 10;
-      /* Minska höjden för att ge mer utrymme för scrollbaren */
-      height: 55px;
+      /* Minskad höjd för kontrollfältet */
+      height: 50px;
       box-sizing: border-box;
-      /* Göra kontrollfältet mer transparent för att kunna se scrollbaren */
-      background-color: rgba(255, 255, 255, 0.85);
-      /* Runda hörn för att förbättra utseendet */
-      border-radius: 8px;
-      margin: 0 15px;
-      width: calc(100% - 30px);
+      background-color: white;
     }
     
     .nav-page-controls {

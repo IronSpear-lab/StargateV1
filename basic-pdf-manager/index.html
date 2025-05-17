@@ -667,10 +667,30 @@
       border-top: 2px solid #222;
     }
     
+    /* Enhetlig knappstil för alla knappar */
+    .uniform-button {
+      border: 1px solid transparent;
+      border-radius: 6px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s;
+      padding: 0 12px;
+    }
+    
+    .uniform-button svg {
+      width: 18px;
+      height: 18px;
+    }
+    
     /* Top-bar kontroller */
     .top-bar-controls {
       display: flex;
-      gap: 15px;
+      gap: 8px;
       align-items: center;
       justify-content: center;
       margin-left: 20px;
@@ -678,15 +698,23 @@
     }
     
     .top-bar-controls .nav-page-controls,
-    .top-bar-controls .modern-zoom-controls,
-    .top-bar-controls .modern-download-button {
-      flex: 0 0 auto;
-      transform: scale(0.85);
-      margin: 0 5px;
+    .top-bar-controls .modern-zoom-controls {
+      display: flex;
+      align-items: center;
+      height: 36px;
+      border-radius: 6px;
+      padding: 0 8px;
+      margin: 0;
+      border: 1px solid #ddd;
+      background-color: white;
     }
     
     .top-bar-controls .modern-download-button {
-      padding: 6px 12px;
+      height: 36px;
+      padding: 0 12px;
+      border-radius: 6px;
+      background-color: #4f46e5;
+      border: 1px solid #4338ca;
     }
     
     /* Ta bort det dedikerade området för scrollbar då det inte behövs med ny layout */
@@ -745,7 +773,7 @@
     
     .modern-nav-button {
       background: #6366f1;
-      border: none;
+      border: 1px solid #5661EC;
       border-radius: 6px;
       width: 36px;
       height: 36px;
@@ -756,7 +784,7 @@
       color: white;
       transition: all 0.2s;
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-      font-size: 22px;
+      font-size: 16px;
       font-weight: bold;
     }
     
@@ -771,26 +799,27 @@
       font-size: 14px;
       min-width: 80px;
       text-align: center;
+      padding: 0 8px;
     }
     
     .modern-zoom-controls {
       display: flex;
       align-items: center;
-      background-color: #ecfdf5;
-      padding: 6px 10px;
-      border-radius: 8px;
-      border: 1px solid #6ee7b7;
-      gap: 8px;
-      flex: 1;
+      background-color: white;
+      padding: 0;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+      gap: 6px;
+      height: 36px;
       justify-content: center;
     }
     
     .modern-zoom-button {
       background: #10b981;
-      border: none;
+      border: 1px solid #0DA678;
       border-radius: 6px;
-      width: 32px;
-      height: 32px;
+      width: 36px;
+      height: 36px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -798,8 +827,9 @@
       color: white;
       transition: all 0.2s;
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-      font-size: 22px;
+      font-size: 16px;
       font-weight: bold;
+      margin: 0 4px;
     }
     
     .modern-zoom-button:hover {
@@ -808,15 +838,12 @@
     }
     
     .modern-zoom-level {
-      font-weight: 600;
+      font-weight: 500;
       min-width: 50px;
       text-align: center;
       font-size: 14px;
-      color: #065f46;
-      background-color: white;
-      padding: 4px 8px;
-      border-radius: 4px;
-      border: 1px solid #d1fae5;
+      color: #4b5563;
+      padding: 0 8px;
     }
     
     .modern-accessibility-controls {
@@ -853,22 +880,28 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 6px;
       background: #4f46e5;
       color: white;
-      border: none;
+      border: 1px solid #4338ca;
       border-radius: 6px;
-      padding: 8px 16px;
+      padding: 0 12px;
       cursor: pointer;
       font-weight: 500;
-      box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
+      font-size: 14px;
+      box-shadow: 0 1px 2px rgba(79, 70, 229, 0.2);
       transition: all 0.2s;
-      flex: 1;
+      height: 36px;
     }
     
     .modern-download-button:hover {
       background: #4338ca;
-      box-shadow: 0 4px 6px rgba(79, 70, 229, 0.25);
+      box-shadow: 0 2px 4px rgba(79, 70, 229, 0.25);
+    }
+    
+    .modern-download-button svg {
+      width: 18px;
+      height: 18px;
     }
     
     .nav-button, .zoom-button, .download-button {

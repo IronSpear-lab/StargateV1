@@ -4,6 +4,7 @@ from .models import File, Directory
 class DirectorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Directory
+        # Inkludera alla fält som behövs för att skapa en mapp
         fields = ['id', 'name', 'slug', 'project', 'parent', 'type', 
                   'is_sidebar_item', 'created_by', 'created_at', 'updated_at',
                   'page_title', 'page_description', 'has_page']
@@ -42,11 +43,8 @@ class DirectorySerializer(serializers.ModelSerializer):
             })
             
         return data
-    
     def create(self, validated_data):
-        request = self.context.get('request')
-        if request and request.user.is_authenticated and 'created_by' not in validated_data:
-            validated_data['created_by'] = request.user
+        validated_data['created_by'] = self.context['request'].user
         return super().create(validated_data)
 
 class FileSerializer(serializers.ModelSerializer):

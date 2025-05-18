@@ -21,7 +21,6 @@ import FolderListPage from './pages/folders/FolderListPage';
 
 // Nu använder vi det importerade SEB-temat istället för detta
 
-
 // The main App component doesn't access context directly
 function App() {
   // Handle login success - can be empty now as AuthContext handles the state
@@ -72,13 +71,5 @@ function App() {
 
   );
 }
-
-// Simple component to show for routes not yet implemented
-const ComingSoonPage = ({ title }: { title: string }) => (
-  <div style={{ padding: '20px' }}>
-    <h1>{title}</h1>
-    <p>Denna sida är under utveckling och kommer snart.</p>
-  </div>
-);
 
 export default App;

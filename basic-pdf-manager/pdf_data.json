@@ -1,0 +1,28 @@
+[
+  {
+    "id": "pdf_1747380588455_7588",
+    "filename": "BEAst-PDF-Guidelines-2.0 (1)",
+    "description": "Ingen beskrivning",
+    "originalFilename": "BEAst-PDF-Guidelines-2.0 (1).pdf",
+    "storedFilename": "pdf-1747380578921-eja149-BEAst-PDF-Guidelines-2.0_(1).pdf",
+    "fileUrl": "/uploads/pdf-1747380578921-eja149-BEAst-PDF-Guidelines-2.0_(1).pdf",
+    "size": 5489359,
+    "uploadedBy": "user@example.com",
+    "uploadedAt": "2025-05-16T07:29:48.455Z",
+    "folderId": 1,
+    "versionNumber": 1
+  },
+  {
+    "id": "pdf_1747382323572_9502",
+    "filename": "AAAAExempel på ritningar",
+    "description": "Ingen beskrivning",
+    "originalFilename": "AAAAExempel paÌ ritningar.pdf",
+    "storedFilename": "pdf-1747382320273-uiq744-AAAAExempel_paÌ_ritningar.pdf",
+    "fileUrl": "/uploads/pdf-1747382320273-uiq744-AAAAExempel_paÌ_ritningar.pdf",
+    "size": 1945902,
+    "uploadedBy": "user@example.com",
+    "uploadedAt": "2025-05-16T07:58:43.572Z",
+    "folderId": 1,
+    "versionNumber": 1
+  }
+]

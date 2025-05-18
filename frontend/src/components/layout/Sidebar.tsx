@@ -1,24 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import * as React from 'react';
+import { Link as RouterLink, useLocation } from 'react-router-dom';
+import * as React from 'react';
+import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { 
-  Sheet, 
   List, 
   ListItem, 
   ListItemButton, 
   ListItemContent, 
-  Typography, 
-  Box, 
-  Input, 
-  IconButton, 
-  Divider,
-  Modal,
-  ModalDialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  FormControl,
-  FormLabel,
-  CircularProgress
+  ListItemDecorator, 
+  Sheet 
 } from '@mui/joy';
 import { Link, useLocation } from 'react-router-dom';
 import directoryService, { DirectoryInput } from '../../services/directoryService';
@@ -38,14 +29,8 @@ const menuItems = [
   { text: '3D Viewer', icon: <ViewInArIcon />, path: '/3d-viewer' },
 ];
 
-// Komponent för varje nod (fil/mapp) i filsystemet
-interface FileSystemNodeProps {
-  node: SidebarFileNode;
-  level: number;
-  filesystemNodes: SidebarFileNode[];
-  openFolders: Record<string, boolean>;
-  toggleFolder: (id: string) => void;
-  handleAddNewFolder: (parentId: string | null) => void;
+interface SidebarProps {
+  width?: number | string;
 }
 
 // Helt ombyggd komponent för filsystemet

@@ -89,8 +89,42 @@ let folders = [
   }
 ];
 
-// In-memory PDF storage (ersätts senare med databas)
+// Använd databas för PDF-lagring
 let pdfFiles = [];
+
+// Hjälpfunktion för att spara alla PDF-filer till en JSON-fil
+function savePDFFilesToFile() {
+  try {
+    const pdfDataFile = path.join(__dirname, 'pdf_data.json');
+    fs.writeFileSync(pdfDataFile, JSON.stringify(pdfFiles, null, 2));
+    console.log(`Sparade ${pdfFiles.length} PDF-filer till ${pdfDataFile}`);
+    return true;
+  } catch (error) {
+    console.error('Fel vid spara PDF-filer till fil:', error);
+    return false;
+  }
+}
+
+// Hjälpfunktion för att ladda alla PDF-filer från en JSON-fil
+function loadPDFFilesFromFile() {
+  try {
+    const pdfDataFile = path.join(__dirname, 'pdf_data.json');
+    if (fs.existsSync(pdfDataFile)) {
+      const data = fs.readFileSync(pdfDataFile, 'utf8');
+      const savedPdfFiles = JSON.parse(data);
+      
+      if (Array.isArray(savedPdfFiles) && savedPdfFiles.length > 0) {
+        pdfFiles = savedPdfFiles;
+        console.log(`Laddat ${pdfFiles.length} PDF-filer från ${pdfDataFile}`);
+        return true;
+      }
+    }
+    return false;
+  } catch (error) {
+    console.error('Fel vid laddning av PDF-filer från fil:', error);
+    return false;
+  }
+}
 
 // Login endpoint
 app.post('/api/login', (req, res) => {
@@ -169,8 +203,11 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
       versionNumber: 1                  // Första versionen av dokumentet
     };
 
-    // Spara PDF-objektet
+    // Spara PDF-objektet i lokal array
     pdfFiles.push(pdfFile);
+    
+    // Spara till fil för permanent lagring
+    savePDFFilesToFile();
 
     res.status(200).json({ success: true, file: pdfFile });
   } catch (error) {
@@ -196,17 +233,27 @@ app.get('/api/pdfs', (req, res) => {
 
   const folderId = req.query.folderId ? parseInt(req.query.folderId) : null;
   
-  // Filtrera på mapp om angett
-  let filteredPdfs;
-  if (folderId) {
-    // Hämta PDFer i angiven mapp
-    filteredPdfs = pdfFiles.filter(pdf => pdf.folderId === folderId);
-  } else {
-    // Hämta alla PDFer om ingen mapp anges
-    filteredPdfs = pdfFiles;
-  }
+  try {
+    // Försök att ladda PDFs från fil om listan är tom
+    if (pdfFiles.length === 0) {
+      loadPDFFilesFromFile();
+    }
 
-  res.status(200).json({ success: true, pdfs: filteredPdfs });
+    // Filtrera på mapp om angett
+    let filteredPdfs;
+    if (folderId) {
+      // Hämta PDFer i angiven mapp
+      filteredPdfs = pdfFiles.filter(pdf => pdf.folderId === folderId);
+    } else {
+      // Hämta alla PDFer om ingen mapp anges
+      filteredPdfs = pdfFiles;
+    }
+
+    res.status(200).json({ success: true, pdfs: filteredPdfs });
+  } catch (error) {
+    console.error('Fel vid hämtning av PDF-lista:', error);
+    res.status(500).json({ success: false, message: 'Kunde inte hämta PDF-filer' });
+  }
 });
 
 // Get specific PDF endpoint
@@ -250,6 +297,9 @@ app.delete('/api/pdfs/:id', (req, res) => {
 
   // Ta bort från arrayen
   pdfFiles.splice(pdfIndex, 1);
+  
+  // Spara den uppdaterade listan till fil
+  savePDFFilesToFile();
 
   res.status(200).json({ success: true });
 });
@@ -259,8 +309,27 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// Ladda PDF-filer från fil när servern startar
+const loadedFiles = loadPDFFilesFromFile();
+if (loadedFiles) {
+  console.log('PDF-filer laddade från fil');
+} else {
+  console.log('Inga sparade PDF-filer hittades, startar med tom lista');
+}
+
 // Start server
 app.listen(port, '0.0.0.0', () => {
   console.log(`PDF Manager running at http://0.0.0.0:${port}`);
   console.log(`Öppna PDF-hanteraren i din webbläsare: http://0.0.0.0:${port}/`);
+});
+
+// Spara PDF-filer till fil vid avstängning
+process.on('SIGINT', () => {
+  console.log('Server stängs ner, sparar PDF-filer till fil...');
+  if (savePDFFilesToFile()) {
+    console.log('PDF-filer sparade till fil');
+  } else {
+    console.error('Fel vid sparande av PDF-filer vid avstängning');
+  }
+  process.exit(0);
 });

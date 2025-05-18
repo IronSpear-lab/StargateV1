@@ -20,12 +20,11 @@ class Directory(models.Model):
     page_title = models.CharField(max_length=255, blank=True, null=True)
     page_description = models.TextField(blank=True, null=True)
     has_page = models.BooleanField(default=True)  # Om en webbsida ska skapas för mappen
-    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        unique_together = ('name', 'project', 'parent', 'is_sidebar_item')
+        unique_together = ('name', 'project', 'parent')
         verbose_name_plural = 'Directories'
     
     def save(self, *args, **kwargs):

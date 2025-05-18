@@ -4,7 +4,7 @@ from .models import File, Directory
 class DirectorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Directory
-<<<<<<< HEAD
+        # Inkludera alla fält som behövs för att skapa en mapp
         fields = ['id', 'name', 'slug', 'project', 'parent', 'type', 
                   'is_sidebar_item', 'created_by', 'created_at', 'updated_at',
                   'page_title', 'page_description', 'has_page']
@@ -43,11 +43,6 @@ class DirectorySerializer(serializers.ModelSerializer):
             })
             
         return data
-=======
-        fields = ['id', 'name', 'project', 'parent', 'created_by', 'created_at', 'updated_at']
-        read_only_fields = ['id', 'created_by', 'created_at', 'updated_at']
->>>>>>> 48ca818 (Restored to '48d8f2899175e71ec876d0e4e4fea3901e40ddf7')
-    
     def create(self, validated_data):
         validated_data['created_by'] = self.context['request'].user
         return super().create(validated_data)

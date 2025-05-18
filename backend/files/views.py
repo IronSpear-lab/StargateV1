@@ -13,7 +13,6 @@ class DirectoryViewSet(viewsets.ModelViewSet):
     search_fields = ['name']
     ordering_fields = ['name', 'created_at']
     
-<<<<<<< HEAD
     # Lägg till destroy-metod för att kunna ta bort alla mappar också
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -42,9 +41,7 @@ class DirectoryViewSet(viewsets.ModelViewSet):
         
         # Default to authentication required
         return [permissions.IsAuthenticated()]
-    
-=======
->>>>>>> 48ca818 (Restored to '48d8f2899175e71ec876d0e4e4fea3901e40ddf7')
+
     def get_queryset(self):
         """Filter directories by project and parent directory"""
         queryset = Directory.objects.all()

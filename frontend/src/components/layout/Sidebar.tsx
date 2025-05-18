@@ -1,9 +1,8 @@
-<<<<<<< HEAD
 import React, { useState, useEffect } from 'react';
-=======
 import * as React from 'react';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
->>>>>>> 48ca818 (Restored to '48d8f2899175e71ec876d0e4e4fea3901e40ddf7')
+import * as React from 'react';
+import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { 
   List, 
   ListItem, 

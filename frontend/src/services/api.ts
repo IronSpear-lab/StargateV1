@@ -37,47 +37,54 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor for handling common errors and token refresh
+// Response interceptor för att hantera vanliga fel och token-förnyelse
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-
-    // If error is 401 and we haven't tried to refresh the token yet
+    
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       
       try {
-        // Try to refresh the token
         const refreshToken = localStorage.getItem('refresh_token');
         
-        if (refreshToken) {
-          console.log('Attempting to refresh token');
-          const response = await axios.post(`${API_URL}/token/refresh/`, {
-            refresh: refreshToken,
-          });
+        if (!refreshToken) {
+          console.error('Ingen refresh token tillgänglig. Användaren måste logga in igen.');
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('refresh_token');
           
-          console.log('Token refreshed successfully');
-          // Get new access token
-          const { access } = response.data;
-          
-          // Store the new token
-          localStorage.setItem('access_token', access);
-          
-          // Update the header for the original request
-          originalRequest.headers.Authorization = `Bearer ${access}`;
-          
-          // Retry the original request
-          return api(originalRequest);
+          window.dispatchEvent(new Event('auth:logout'));
+          return Promise.reject(error);
         }
+        
+        console.log('Försöker förnya access token...');
+        const response = await axios.post(`${API_URL}/token/refresh/`, {
+          refresh: refreshToken,
+        });
+        
+        const newAccessToken = response.data.access;
+        
+        localStorage.setItem('access_token', newAccessToken);
+        console.log('Access token förnyad framgångsrikt');
+        
+        api.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`;
+        originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
+        
+        return api(originalRequest);
       } catch (refreshError) {
-        // If refresh fails, clear tokens and force login
+        console.error('Förnyelse av token misslyckades:', refreshError);
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
         
-        // Redirect to login (handled by components)
         window.dispatchEvent(new Event('auth:logout'));
+        return Promise.reject(error);
       }
+    }
+    
+    if (error.code === 'ECONNABORTED' || !error.response) {
+      console.error('Nätverksfel: Anslutningen avbröts eller timeout', error);
+      error.isNetworkError = true;
     }
     
     return Promise.reject(error);

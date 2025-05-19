@@ -71,47 +71,66 @@ const directoryService = {
           params: params
         });
         
-        let data;
-        // API svarar med en results-array om pagination är aktiverad
-        if (response.data.results) {
-          data = response.data.results;
-        } else {
-          data = response.data;
-        }
-        
-        // Spara i cache
-        directoryCache[cacheKey] = {
-          data,
-          timestamp: now
+        const data = {
+          directories: response.data.results || [],
+          meta: {
+            count: response.data.count || 0,
+            next: response.data.next || null,
+            previous: response.data.previous || null,
+            source: 'proxy'
+          }
         };
         
-        return data;
-      } catch (proxyError) {
+        if (cacheKey && response.data.results) {
+          directoryCache[cacheKey] = {
+            data: response.data.results,
+            timestamp: Date.now()
+          };
+        }
+        
+        return data.directories;
+      } catch (proxyError: any) {
         console.warn('Kunde inte hämta mappar via proxy, försöker med direkt anslutning', proxyError);
         
-        // Om det misslyckas, försök med direkt anslutning
+        const statusCode = proxyError.response?.status;
+        const isNetworkError = !proxyError.response || proxyError.code === 'ECONNABORTED';
+        const isServerError = statusCode >= 500 && statusCode < 600;
+        const isNotFoundError = statusCode === 404;
+        
+        if (!isNetworkError && !isServerError && !isNotFoundError) {
+          console.error('API-fel (inte nätverksrelaterat):', proxyError);
+          throw proxyError;
+        }
+        
+        // Om det är ett nätverksfel, försök med direktanslutning
         const directResponse = await axios.get(`${DIRECT_API_URL}/files/directories/`, {
           params: params,
           headers: {
             'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          }
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+          },
+          // Sätt timeout för direktanslutning
+          timeout: 10000
         });
         
-        let data;
-        if (directResponse.data.results) {
-          data = directResponse.data.results;
-        } else {
-          data = directResponse.data;
-        }
-        
-        // Spara i cache
-        directoryCache[cacheKey] = {
-          data,
-          timestamp: now
+        const data = {
+          directories: directResponse.data.results || [],
+          meta: {
+            count: directResponse.data.count || 0,
+            next: directResponse.data.next || null,
+            previous: directResponse.data.previous || null,
+            source: 'direct'
+          }
         };
         
-        return data;
+        if (cacheKey && directResponse.data.results) {
+          directoryCache[cacheKey] = {
+            data: directResponse.data.results,
+            timestamp: Date.now()
+          };
+        }
+        
+        return data.directories;
       }
     } catch (error) {
       console.error('Error fetching sidebar directories:', error);

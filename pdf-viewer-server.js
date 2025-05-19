@@ -211,21 +211,102 @@ app.get('/api/pdf/:id', (req, res) => {
   res.status(200).json(pdf);
 });
 
-// För att testa och se om proxyn fungerar - vi skickar fortfarande vissa anrop till backend
 app.use('/api/backend', createProxyMiddleware({
   target: 'http://0.0.0.0:8001',
   changeOrigin: true,
   pathRewrite: {
     '^/api/backend': '/api', 
   },
+  timeout: 15000, // 15 sekunder timeout
+  proxyTimeout: 15000,
+  followRedirects: true,
+  logLevel: 'warn',
+  onProxyReq: (proxyReq, req, res) => {
+    console.log(`Proxying request to: ${req.method} ${proxyReq.path}`);
+    
+    if (req.session && req.session.user) {
+      proxyReq.setHeader('X-User-ID', req.session.user.id);
+      proxyReq.setHeader('X-Username', req.session.user.username);
+    }
+  },
+  onProxyRes: (proxyRes, req, res) => {
+    console.log(`Received proxy response: ${proxyRes.statusCode} for ${req.method} ${req.url}`);
+  },
   onError: (err, req, res) => {
-    console.error('Proxy error:', err);
-    res.status(500).json({
-      error: 'Proxy error',
-      message: 'Could not connect to backend server'
+    console.error(`Proxy error (${req.method} ${req.url}):`, err);
+    
+    
+    res.status(502).json({
+      error: 'Backend API anslutning misslyckades',
+      details: err.message,
+      code: err.code || 'UNKNOWN_ERROR',
+      url: req.url,
+      method: req.method,
+      timestamp: new Date().toISOString()
     });
   }
 }));
+
+app.use('/api', (req, res, next) => {
+  // Kontrollera om anropet redan har hanterats av /api/backend-proxyn
+  if (req.url.startsWith('/backend')) {
+    return next();
+  }
+  
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
+  const targetUrl = `${backendUrl}${req.url}`;
+  
+  console.log(`Proxying API request to: ${targetUrl}`);
+  
+  const maxRetries = 3;
+  let retryCount = 0;
+  
+  const proxyRequest = () => {
+    // Skapa en request med 'request' biblioteket
+    const request = require('request');
+    
+    const headers = { ...req.headers };
+    delete headers.host; // Ta bort host header för att undvika konflikter
+    
+    const options = {
+      url: targetUrl,
+      method: req.method,
+      headers: headers,
+      timeout: 15000, // 15 sekunder timeout
+      body: req.body,
+      json: req.headers['content-type'] === 'application/json'
+    };
+    
+    request(options, (error, response, body) => {
+      if (error) {
+        console.error(`API proxy error (attempt ${retryCount + 1}/${maxRetries}):`, error);
+        
+        if (retryCount < maxRetries - 1) {
+          retryCount++;
+          setTimeout(proxyRequest, 1000 * retryCount); // Exponentiell backoff
+          return;
+        }
+        
+        return res.status(502).json({ 
+          error: 'Backend API anslutning misslyckades efter flera försök',
+          details: error.message,
+          code: error.code || 'UNKNOWN_ERROR',
+          url: req.url,
+          method: req.method,
+          timestamp: new Date().toISOString()
+        });
+      }
+      
+      Object.keys(response.headers).forEach(key => {
+        res.setHeader(key, response.headers[key]);
+      });
+      
+      res.status(response.statusCode).send(body);
+    });
+  };
+  
+  proxyRequest();
+});
 
 // Route for the basic PDF viewer - redirects to dialog page
 app.get('/', (req, res) => {

@@ -48,17 +48,52 @@ const DirectPDFDialog: React.FC<DirectPDFDialogProps> = ({ open, onClose, pdfUrl
         setLoading(true);
         setError(null);
         
-        // Ladda dokumentet
-        const loadingTask = pdfjsLib.getDocument(pdfUrl);
-        const pdf = await loadingTask.promise;
+        if (!pdfUrl) {
+          throw new Error('Ingen PDF-URL tillhandahållen');
+        }
         
-        setPdfDocument(pdf);
-        setNumPages(pdf.numPages);
-        setCurrentPage(1);
+        const maxRetries = 3;
+        let retryCount = 0;
+        let pdf: PDFDocumentProxy | null = null;
+        
+        while (retryCount < maxRetries && !pdf) {
+          try {
+            // Ladda dokumentet med timeout
+            const loadingTask = pdfjsLib.getDocument({
+              url: pdfUrl,
+              withCredentials: true
+            });
+            
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Timeout vid laddning av PDF')), 30000)
+            );
+            
+            // Använd Promise.race för att hantera timeout
+            pdf = await Promise.race([loadingTask.promise, timeoutPromise]) as PDFDocumentProxy;
+            
+          } catch (loadError) {
+            retryCount++;
+            console.warn(`PDF-laddningsförsök ${retryCount} misslyckades:`, loadError);
+            
+            if (retryCount >= maxRetries) {
+              throw loadError;
+            }
+            
+            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+          }
+        }
+        
+        if (pdf) {
+          setPdfDocument(pdf);
+          setNumPages(pdf.numPages);
+          setCurrentPage(1);
+        } else {
+          throw new Error('Kunde inte ladda PDF-dokumentet efter flera försök');
+        }
         setLoading(false);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Fel vid laddning av PDF:', err);
-        setError('Kunde inte ladda PDF-dokumentet. Försök igen senare.');
+        setError(`Kunde inte ladda PDF-dokumentet: ${err.message || 'Okänt fel'}`);
         setLoading(false);
       }
     };
@@ -80,33 +115,67 @@ const DirectPDFDialog: React.FC<DirectPDFDialogProps> = ({ open, onClose, pdfUrl
     const renderPage = async () => {
       try {
         setLoading(true);
+        setError(null);
         
-        // Hämta sidan
-        const page = await pdfDocument.getPage(currentPage);
+        if (currentPage < 1 || currentPage > pdfDocument.numPages) {
+          throw new Error(`Ogiltig sida: ${currentPage}. Dokumentet har ${pdfDocument.numPages} sidor.`);
+        }
         
-        // Beräkna skala för att passa container
-        const viewport = page.getViewport({ scale });
+        const maxRenderRetries = 2;
+        let renderRetryCount = 0;
+        let rendered = false;
         
-        const canvas = canvasRef.current;
-        if (!canvas) return;
+        while (renderRetryCount < maxRenderRetries && !rendered) {
+          try {
+            // Hämta sidan
+            const page = await pdfDocument.getPage(currentPage);
+            
+            // Beräkna skala för att passa container
+            const viewport = page.getViewport({ scale });
+            
+            const canvas = canvasRef.current;
+            if (!canvas) {
+              throw new Error('Canvas-element saknas');
+            }
+            
+            const context = canvas.getContext('2d');
+            if (!context) {
+              throw new Error('Kunde inte skapa canvas-kontext');
+            }
+            
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            
+            // Rendera PDF-sidan till canvas
+            const renderContext = {
+              canvasContext: context,
+              viewport: viewport
+            };
+            
+            const renderPromise = page.render(renderContext).promise;
+            const timeoutPromise = new Promise<never>((_, reject) => 
+              setTimeout(() => reject(new Error('Timeout vid rendering av PDF-sida')), 10000)
+            );
+            
+            await Promise.race([renderPromise, timeoutPromise]);
+            rendered = true;
+            
+          } catch (renderError: any) {
+            renderRetryCount++;
+            console.warn(`Rendering-försök ${renderRetryCount} misslyckades:`, renderError);
+            
+            if (renderRetryCount >= maxRenderRetries) {
+              throw renderError;
+            }
+            
+            await new Promise(resolve => setTimeout(resolve, 500 * renderRetryCount));
+          }
+        }
         
-        const context = canvas.getContext('2d');
-        if (!context) return;
-        
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
-        
-        // Rendera PDF-sidan till canvas
-        const renderContext = {
-          canvasContext: context,
-          viewport: viewport
-        };
-        
-        await page.render(renderContext).promise;
         setLoading(false);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Fel vid rendering av PDF-sida:', err);
-        setError('Kunde inte visa sidan. Försök igen senare.');
+        setError(`Kunde inte visa sidan: ${err.message || 'Okänt fel'}`);
         setLoading(false);
       }
     };

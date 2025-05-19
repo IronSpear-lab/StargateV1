@@ -82,7 +82,14 @@ class DirectoryViewSet(viewsets.ModelViewSet):
         except Exception as e:
             # Om något går fel, logga felet och returnera felmeddelande
             print(f"Fel vid radering av mapp: {str(e)}")
-            return Response({"error": f"Kunde inte radera mappen: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({
+                "error": f"Kunde inte radera mappen: {str(e)}",
+                "details": {
+                    "exception_type": type(e).__name__,
+                    "directory_id": directory_id,
+                    "traceback": str(e)
+                }
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     def get_permissions(self):
         """
@@ -217,15 +224,29 @@ class FileViewSet(viewsets.ModelViewSet):
         
     def destroy(self, request, *args, **kwargs):
         """Delete a file and its physical file from storage"""
-        instance = self.get_object()
-        
-        # Försök ta bort den fysiska filen från lagring
         try:
-            instance.file.delete(save=False)
+            instance = self.get_object()
+            
+            # Försök ta bort den fysiska filen från lagring
+            try:
+                instance.file.delete(save=False)
+            except Exception as e:
+                print(f"Varning: Kunde inte radera fysisk fil: {str(e)}")
+            
+            # Radera filens databaspost
+            self.perform_destroy(instance)
+            
+            return Response({
+                "message": "Filen har raderats framgångsrikt",
+                "id": kwargs.get('pk')
+            }, status=status.HTTP_200_OK)
         except Exception as e:
-            pass  # Fortsätt även om filen inte kunde tas bort
-        
-        # Radera filens databaspost
-        self.perform_destroy(instance)
-        
-        return Response(status=status.HTTP_204_NO_CONTENT)
+            print(f"Fel vid radering av fil: {str(e)}")
+            return Response({
+                "error": f"Kunde inte radera filen: {str(e)}",
+                "details": {
+                    "exception_type": type(e).__name__,
+                    "file_id": kwargs.get('pk'),
+                    "traceback": str(e)
+                }
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

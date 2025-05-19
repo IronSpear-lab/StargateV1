@@ -13,12 +13,12 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunSQL(
             """
-            DROP TABLE IF EXISTS workspace_filenode CASCADE;
-            DROP TABLE IF EXISTS workspace_fileversion CASCADE;
-            DROP TABLE IF EXISTS workspace_filecomment CASCADE;
-            DROP TABLE IF EXISTS workspace_wikiarticle CASCADE;
-            DROP TABLE IF EXISTS workspace_projectdashboard CASCADE;
-            DROP TABLE IF EXISTS workspace_pdfdocument CASCADE;
+            DROP TABLE IF EXISTS workspace_filenode;
+            DROP TABLE IF EXISTS workspace_fileversion;
+            DROP TABLE IF EXISTS workspace_filecomment;
+            DROP TABLE IF EXISTS workspace_wikiarticle;
+            DROP TABLE IF EXISTS workspace_projectdashboard;
+            DROP TABLE IF EXISTS workspace_pdfdocument;
             """,
             reverse_sql=migrations.RunSQL.noop
         ),

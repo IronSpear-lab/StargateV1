@@ -11,6 +11,7 @@ const FreeCadViewer: React.FC<FreeCadViewerProps> = ({ filePath, demoMode = fals
   const containerRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [fileInfo, setFileInfo] = useState<{name: string, type: string} | null>(null);
   
   // Referens för att hålla reda på scenen
   const sceneRef = useRef<{
@@ -154,13 +155,18 @@ const FreeCadViewer: React.FC<FreeCadViewerProps> = ({ filePath, demoMode = fals
           await loadDemoModel();
         } else if (filePath) {
           // Ladda från fil
+          setFileInfo({
+            name: filePath.split('/').pop() || 'Fil',
+            type: filePath.split('.').pop()?.toUpperCase() || 'OKÄND'
+          });
           await loadModelFromPath(filePath);
         } else {
           // Inget att ladda
           setError("Ingen fil angiven att ladda.");
         }
       } catch (err) {
-        setError(`Fel vid laddning av modell: ${err}`);
+        console.error("Laddningsfel:", err);
+        setError(`Fel vid laddning av modell: ${err instanceof Error ? err.message : 'Okänt fel'}`);
       } finally {
         setLoading(false);
       }
@@ -243,27 +249,32 @@ const FreeCadViewer: React.FC<FreeCadViewerProps> = ({ filePath, demoMode = fals
     sceneRef.current.models.push(group);
     
     // Centrera kameran på modellen
-    if (sceneRef.current.camera && sceneRef.current.controls) {
-      // Beräkna modellens bounding box
-      const box = new THREE.Box3().setFromObject(group);
-      const center = box.getCenter(new THREE.Vector3());
-      const size = box.getSize(new THREE.Vector3());
-      
-      // Uppdatera kameraposition för att passa modellen
-      const maxDim = Math.max(size.x, size.y, size.z);
-      const fov = sceneRef.current.camera.fov * (Math.PI / 180);
-      const distance = maxDim / (2 * Math.tan(fov / 2));
-      
-      const direction = new THREE.Vector3(1, 0.8, 1).normalize();
-      sceneRef.current.camera.position.copy(center).add(direction.multiplyScalar(distance * 1.5));
-      sceneRef.current.camera.lookAt(center);
-      
-      // Uppdatera controls
-      sceneRef.current.controls.target.copy(center);
-    }
+    centerCameraOnObject(group);
   };
   
-  // Ladda modell från fil (simulerad)
+  // Centrera kameran på ett objekt
+  const centerCameraOnObject = (object: THREE.Object3D) => {
+    if (!sceneRef.current.camera || !sceneRef.current.controls) return;
+    
+    // Beräkna bounding box
+    const box = new THREE.Box3().setFromObject(object);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    
+    // Uppdatera kameraposition för att passa modellen
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const fov = sceneRef.current.camera.fov * (Math.PI / 180);
+    const distance = maxDim / (2 * Math.tan(fov / 2));
+    
+    const direction = new THREE.Vector3(1, 0.8, 1).normalize();
+    sceneRef.current.camera.position.copy(center).add(direction.multiplyScalar(distance * 1.5));
+    sceneRef.current.camera.lookAt(center);
+    
+    // Uppdatera controls
+    sceneRef.current.controls.target.copy(center);
+  };
+  
+  // Ladda modell från fil (verklig filhantering)
   const loadModelFromPath = async (path: string) => {
     if (!sceneRef.current.scene) return;
     
@@ -273,89 +284,320 @@ const FreeCadViewer: React.FC<FreeCadViewerProps> = ({ filePath, demoMode = fals
     });
     sceneRef.current.models = [];
     
-    // Här skulle vi anropa FreeCAD-integrationen för att konvertera & ladda
-    // I detta exempel använder vi en liknande demo-modell som ovan, men har 
-    // stöd för framtida integration med faktiskt FreeCAD-parsing
-
-    // Simulating a delay for file loading
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Skapa en demo-modell baserad på "filnamnet"
-    const group = new THREE.Group();
-    
-    if (path.toLowerCase().includes('part')) {
-      // En del-liknande modell
-      const partGeometry = new THREE.CylinderGeometry(2, 2, 4, 32);
-      const partMaterial = new THREE.MeshStandardMaterial({ color: 0x3498db });
-      const part = new THREE.Mesh(partGeometry, partMaterial);
-      
-      // Skapa hål genom att kombinera flera geometrier
-      const holeGeometry = new THREE.CylinderGeometry(0.5, 0.5, 5, 32);
-      const holeMaterial = new THREE.MeshStandardMaterial({ color: 0xf5f5f5 });
-      const hole = new THREE.Mesh(holeGeometry, holeMaterial);
-      hole.rotation.x = Math.PI / 2;
-      
-      group.add(part);
-      group.add(hole);
-    } else if (path.toLowerCase().includes('assembly')) {
-      // En mer komplex assembly
-      const baseGeometry = new THREE.BoxGeometry(8, 1, 8);
-      const baseMaterial = new THREE.MeshStandardMaterial({ color: 0x7f8c8d });
-      const base = new THREE.Mesh(baseGeometry, baseMaterial);
-      base.position.y = -0.5;
-      group.add(base);
-      
-      // Flera komponenter
-      const colors = [0x3498db, 0xe74c3c, 0x2ecc71, 0xf1c40f];
-      for (let i = 0; i < 4; i++) {
-        const angle = (i / 4) * Math.PI * 2;
-        const component = new THREE.Mesh(
-          new THREE.BoxGeometry(1, 2, 1),
-          new THREE.MeshStandardMaterial({ color: colors[i] })
+    try {
+      // För OBJ-filer, använd OBJLoader från Three.js
+      if (path.toLowerCase().endsWith('.obj')) {
+        // Visa laddningsmeddelande
+        setLoading(true);
+        
+        // Importera OBJLoader dynamiskt
+        const { OBJLoader } = await import('three/examples/jsm/loaders/OBJLoader.js');
+        const loader = new OBJLoader();
+        
+        // Ladda filen
+        loader.load(
+          path,
+          (object) => {
+            // Lägg till objektet i scenen
+            sceneRef.current.scene?.add(object);
+            sceneRef.current.models.push(object);
+            
+            // Centrera kameran på modellen
+            centerCameraOnObject(object);
+            
+            setLoading(false);
+          },
+          (xhr) => {
+            // Uppdatera laddningsstatus om det behövs
+            console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+          },
+          (error: any) => {
+            console.error('Ett fel uppstod vid laddning av OBJ-fil:', error);
+            setError(`Kunde inte ladda OBJ-filen: ${error instanceof Error ? error.message : 'Okänt fel'}`);
+            setLoading(false);
+          }
         );
-        component.position.set(
-          Math.cos(angle) * 3,
-          1,
-          Math.sin(angle) * 3
-        );
-        group.add(component);
+        return;
       }
       
-      // Centrum-komponent
-      const centerPiece = new THREE.Mesh(
-        new THREE.SphereGeometry(1, 32, 32),
-        new THREE.MeshStandardMaterial({ color: 0x9b59b6 })
+      // För STL-filer, använd STLLoader
+      else if (path.toLowerCase().endsWith('.stl')) {
+        setLoading(true);
+        
+        const { STLLoader } = await import('three/examples/jsm/loaders/STLLoader.js');
+        const loader = new STLLoader();
+        
+        loader.load(
+          path,
+          (geometry) => {
+            const material = new THREE.MeshStandardMaterial({ 
+              color: 0x3498db,
+              metalness: 0.2,
+              roughness: 0.5
+            });
+            const mesh = new THREE.Mesh(geometry, material);
+            
+            sceneRef.current.scene?.add(mesh);
+            sceneRef.current.models.push(mesh);
+            
+            centerCameraOnObject(mesh);
+            
+            setLoading(false);
+          },
+          (xhr) => {
+            console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+          },
+          (error: any) => {
+            console.error('Ett fel uppstod vid laddning av STL-fil:', error);
+            setError(`Kunde inte ladda STL-filen: ${error instanceof Error ? error.message : 'Okänt fel'}`);
+            setLoading(false);
+          }
+        );
+        return;
+      }
+      
+      // För GLTF/GLB-filer
+      else if (path.toLowerCase().endsWith('.gltf') || path.toLowerCase().endsWith('.glb')) {
+        setLoading(true);
+        
+        const { GLTFLoader } = await import('three/examples/jsm/loaders/GLTFLoader.js');
+        const loader = new GLTFLoader();
+        
+        loader.load(
+          path,
+          (gltf) => {
+            sceneRef.current.scene?.add(gltf.scene);
+            sceneRef.current.models.push(gltf.scene);
+            
+            centerCameraOnObject(gltf.scene);
+            
+            setLoading(false);
+          },
+          (xhr) => {
+            console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+          },
+          (error: any) => {
+            console.error('Ett fel uppstod vid laddning av GLTF/GLB-fil:', error);
+            setError(`Kunde inte ladda GLTF/GLB-filen: ${error instanceof Error ? error.message : 'Okänt fel'}`);
+            setLoading(false);
+          }
+        );
+        return;
+      }
+      
+      // För FBX-filer
+      else if (path.toLowerCase().endsWith('.fbx')) {
+        setLoading(true);
+        
+        const { FBXLoader } = await import('three/examples/jsm/loaders/FBXLoader.js');
+        const loader = new FBXLoader();
+        
+        loader.load(
+          path,
+          (object) => {
+            sceneRef.current.scene?.add(object);
+            sceneRef.current.models.push(object);
+            
+            centerCameraOnObject(object);
+            
+            setLoading(false);
+          },
+          (xhr) => {
+            console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+          },
+          (error: any) => {
+            console.error('Ett fel uppstod vid laddning av FBX-fil:', error);
+            setError(`Kunde inte ladda FBX-filen: ${error instanceof Error ? error.message : 'Okänt fel'}`);
+            setLoading(false);
+          }
+        );
+        return;
+      }
+      
+      // Andra filtyper - skapa en visualisering för specifika filtyper
+      createFileRepresentation(path);
+      
+    } catch (err) {
+      console.error('Ett fel uppstod:', err);
+      setError(`Kunde inte ladda filen: ${err instanceof Error ? err.message : 'Okänt fel'}`);
+      setLoading(false);
+    }
+  };
+  
+  // Skapa en representation av filen baserat på filtyp
+  const createFileRepresentation = (path: string) => {
+    const fileName = path.split('/').pop() || path;
+    const fileExtension = fileName.split('.').pop()?.toLowerCase() || '';
+    
+    // Skapa en grupp för vår modell
+    const group = new THREE.Group();
+    
+    // Skapa en bas-modell baserad på filtyp
+    if (fileExtension === 'dwg' || fileExtension === 'dxf') {
+      // Ritningsmodell
+      const drawingBase = new THREE.Mesh(
+        new THREE.BoxGeometry(6, 0.1, 8),
+        new THREE.MeshStandardMaterial({ color: 0xe0e0e0 })
       );
-      centerPiece.position.y = 1;
-      group.add(centerPiece);
-    } else {
-      // Standard CAD-modell
-      await loadDemoModel();
-      return;
+      drawingBase.position.y = -0.5;
+      group.add(drawingBase);
+      
+      // Skapa några linjer för att representera en ritning
+      const lineMaterial = new THREE.LineBasicMaterial({ color: 0x0066cc });
+      
+      // Horisontella linjer
+      for (let i = 0; i < 5; i++) {
+        const points = [];
+        points.push(new THREE.Vector3(-2.5, -0.4, -3 + i * 1.5));
+        points.push(new THREE.Vector3(2.5, -0.4, -3 + i * 1.5));
+        
+        const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
+        const line = new THREE.Line(lineGeometry, lineMaterial);
+        group.add(line);
+      }
+      
+      // Vertikala linjer
+      for (let i = 0; i < 4; i++) {
+        const points = [];
+        points.push(new THREE.Vector3(-1.5 + i, -0.4, -3.5));
+        points.push(new THREE.Vector3(-1.5 + i, -0.4, 3.5));
+        
+        const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
+        const line = new THREE.Line(lineGeometry, lineMaterial);
+        group.add(line);
+      }
+    } 
+    else if (fileExtension === 'step' || fileExtension === 'stp' || 
+            fileExtension === 'iges' || fileExtension === 'igs' || 
+            fileExtension === 'fcstd') {
+      // CAD-modell
+      // Skapa en bas
+      const base = new THREE.Mesh(
+        new THREE.BoxGeometry(8, 1, 8),
+        new THREE.MeshStandardMaterial({ color: 0x7f8c8d })
+      );
+      base.position.y = -1;
+      group.add(base);
+      
+      // Lägg till en cylinder
+      const cylinder = new THREE.Mesh(
+        new THREE.CylinderGeometry(1.5, 1.5, 1, 32),
+        new THREE.MeshStandardMaterial({ color: 0x3498db })
+      );
+      cylinder.position.y = -0.5;
+      group.add(cylinder);
+      
+      // Lägg till en sfär
+      const sphere = new THREE.Mesh(
+        new THREE.SphereGeometry(1, 32, 32),
+        new THREE.MeshStandardMaterial({ color: 0xe74c3c })
+      );
+      sphere.position.y = 0.5;
+      group.add(sphere);
+    }
+    else {
+      // Generic 3D model
+      const modelMesh = new THREE.Mesh(
+        new THREE.BoxGeometry(4, 4, 4),
+        new THREE.MeshStandardMaterial({ color: 0x9b59b6, wireframe: true })
+      );
+      group.add(modelMesh);
     }
     
-    sceneRef.current.scene.add(group);
+    // Lägg till en informationsskylt med filnamn och filtyp
+    const makeTextSprite = (message: string, parameters: any = {}) => {
+      const fontface = parameters.fontface || 'Arial';
+      const fontsize = parameters.fontsize || 18;
+      const borderThickness = parameters.borderThickness || 4;
+      const backgroundColor = parameters.backgroundColor || { r:255, g:255, b:255, a:1.0 };
+      const textColor = parameters.textColor || { r:0, g:0, b:0, a:1.0 };
+      
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      if (!context) return null;
+      
+      // Sätt canvas storlek
+      canvas.width = 400;
+      canvas.height = 160;
+      
+      // Textinställningar
+      context.font = `Bold ${fontsize}px ${fontface}`;
+      
+      // Bakgrund
+      context.fillStyle = `rgba(${backgroundColor.r}, ${backgroundColor.g}, ${backgroundColor.b}, ${backgroundColor.a})`;
+      context.strokeStyle = 'black';
+      context.lineWidth = borderThickness;
+      
+      // Skapa bakgrundsrektangel
+      const metrics = context.measureText(message);
+      const textWidth = metrics.width;
+      roundRect(
+        context, 
+        borderThickness/2, 
+        borderThickness/2, 
+        canvas.width - borderThickness, 
+        canvas.height - borderThickness, 
+        8
+      );
+      
+      // Text
+      context.fillStyle = `rgba(${textColor.r}, ${textColor.g}, ${textColor.b}, ${textColor.a})`;
+      context.fillText(message, borderThickness, fontsize + borderThickness);
+      
+      // Skapa texture från canvas
+      const texture = new THREE.Texture(canvas);
+      texture.needsUpdate = true;
+      
+      // Skapa sprite
+      const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+      const sprite = new THREE.Sprite(spriteMaterial);
+      sprite.scale.set(4, 1.6, 1);
+      
+      return sprite;
+    };
+    
+    // Hjälpfunktion för att rita rundade rektanglar
+    const roundRect = (ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) => {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    };
+    
+    // Skapa och lägg till informationsskylt
+    const fileInfoText = 
+      `Filnamn: ${fileName}\n` +
+      `Filtyp: ${fileExtension.toUpperCase()}`;
+    
+    const infoSprite = makeTextSprite(fileInfoText, {
+      fontsize: 24,
+      borderThickness: 6,
+      backgroundColor: { r:50, g:50, b:100, a:0.8 },
+      textColor: { r:255, g:255, b:255, a:1.0 }
+    });
+    
+    if (infoSprite) {
+      infoSprite.position.set(0, 3, 0);
+      group.add(infoSprite);
+    }
+    
+    sceneRef.current.scene?.add(group);
     sceneRef.current.models.push(group);
     
-    // Centrera kameran på modellen
-    if (sceneRef.current.camera && sceneRef.current.controls) {
-      // Beräkna modellens bounding box
-      const box = new THREE.Box3().setFromObject(group);
-      const center = box.getCenter(new THREE.Vector3());
-      const size = box.getSize(new THREE.Vector3());
-      
-      // Uppdatera kameraposition för att passa modellen
-      const maxDim = Math.max(size.x, size.y, size.z);
-      const fov = sceneRef.current.camera.fov * (Math.PI / 180);
-      const distance = maxDim / (2 * Math.tan(fov / 2));
-      
-      const direction = new THREE.Vector3(1, 0.8, 1).normalize();
-      sceneRef.current.camera.position.copy(center).add(direction.multiplyScalar(distance * 1.5));
-      sceneRef.current.camera.lookAt(center);
-      
-      // Uppdatera controls
-      sceneRef.current.controls.target.copy(center);
-    }
+    // Centrera kameran
+    centerCameraOnObject(group);
+    
+    // Färdig med laddning
+    setLoading(false);
   };
 
   return (
@@ -407,6 +649,29 @@ const FreeCadViewer: React.FC<FreeCadViewerProps> = ({ filePath, demoMode = fals
         >
           <Typography color="danger" level="body-lg">
             {error}
+          </Typography>
+        </Box>
+      )}
+      
+      {fileInfo && !loading && !error && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 10,
+            left: 10,
+            backgroundColor: 'rgba(0,0,0,0.6)',
+            padding: 2,
+            borderRadius: 1,
+            zIndex: 5,
+            color: 'white',
+            maxWidth: '50%'
+          }}
+        >
+          <Typography level="body-sm" sx={{ color: 'white', mb: 0.5 }}>
+            <strong>Fil:</strong> {fileInfo.name}
+          </Typography>
+          <Typography level="body-sm" sx={{ color: 'white' }}>
+            <strong>Typ:</strong> {fileInfo.type}
           </Typography>
         </Box>
       )}

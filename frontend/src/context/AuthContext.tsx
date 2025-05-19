@@ -203,13 +203,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
     } catch (error: any) {
       console.error('Login error:', error);
+      
+      let errorMessage = 'Ogiltiga inloggningsuppgifter eller serverfel.';
+      
+      if (error.response) {
+        if (error.response.status === 401) {
+          errorMessage = 'Fel användarnamn eller lösenord.';
+        } else if (error.response.status === 429) {
+          errorMessage = 'För många inloggningsförsök. Försök igen senare.';
+        } else if (error.response.data?.detail) {
+          errorMessage = error.response.data.detail;
+        }
+      } else if (error.code === 'ECONNABORTED' || !error.response) {
+        errorMessage = 'Kunde inte ansluta till servern. Kontrollera din nätverksanslutning.';
+      }
+      
       setAuthState((prev) => ({
         ...prev,
         isAuthenticated: false,
         user: null,
         token: null,
         loading: false,
-        error: error.response?.data?.detail || 'Ogiltiga inloggningsuppgifter eller serverfel.',
+        error: errorMessage,
       }));
     }
   };

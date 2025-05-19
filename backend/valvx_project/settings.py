@@ -171,12 +171,18 @@ SIMPLE_JWT = {
 
 # CORS settings
 CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins in development/Replit
+
 CORS_ALLOW_CREDENTIALS = True
 
 # Add specific allowed origins if needed - these will be used if CORS_ALLOW_ALL_ORIGINS is False
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5000",
+    "http://localhost:5173",  # Vite default dev port
     "http://0.0.0.0:5000",
+    "http://0.0.0.0:5173",
+    "http://localhost:8000",
+    "http://127.0.0.1:5000",
+    "http://127.0.0.1:8000",
     # Add Replit domains pattern
     "https://*.repl.co",
     "https://*.replit.app",
@@ -184,7 +190,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://*.janeway.replit.dev",
 ]
 
-# Required for wildcard origins to work
+# Required for wildcard origins to work - förbättrade regex-mönster
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https://.*\.repl\.co$",
     r"^https://.*\.replit\.app$",

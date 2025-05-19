@@ -33,6 +33,6 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
-    allowedHosts: ["3eabe322-11fd-420e-9b72-6dc9b22d9093-00-2gpr7cql4w25w.kirk.replit.dev", "code-download-app-tunnel-cu9vdyo7.devinapps.com", "code-download-app-tunnel-30272owc.devinapps.com"]
+    allowedHosts: ["3eabe322-11fd-420e-9b72-6dc9b22d9093-00-2gpr7cql4w25w.kirk.replit.dev", "code-download-app-tunnel-cu9vdyo7.devinapps.com", "code-download-app-tunnel-30272owc.devinapps.com", "code-download-app-tunnel-xq4liwg0.devinapps.com"]
   },
 });

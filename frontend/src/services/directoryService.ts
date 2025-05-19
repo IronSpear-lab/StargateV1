@@ -141,7 +141,15 @@ const directoryService = {
   // Hämta ett directory med ID
   getDirectory: async (id: number): Promise<ApiDirectory | null> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/files/directories/${id}/`);
+      // Hämta access token från localStorage
+      const token = localStorage.getItem('access_token');
+      
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      };
+      
+      const response = await axios.get(`${API_BASE_URL}/files/directories/${id}/`, { headers });
       return response.data;
     } catch (error) {
       console.error(`Error fetching directory with id ${id}:`, error);
@@ -186,8 +194,16 @@ const directoryService = {
       
       // Försök med API-anropet
       try {
+        // Hämta access token från localStorage
+        const token = localStorage.getItem('access_token');
+        
+        const headers = {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        };
+        
         // Vi använder bara den primära metoden nu för att minska komplexiteten
-        const response = await axios.post(`${API_BASE_URL}/files/directories/`, dirData);
+        const response = await axios.post(`${API_BASE_URL}/files/directories/`, dirData, { headers });
         console.log('Mapp skapad via API:', response.data);
         return response.data;
       } catch (error: any) {
@@ -215,7 +231,15 @@ const directoryService = {
   // Uppdatera ett directory
   updateDirectory: async (id: number, directory: DirectoryInput): Promise<ApiDirectory | null> => {
     try {
-      const response = await axios.put(`${API_BASE_URL}/files/directories/${id}/`, directory);
+      // Hämta access token från localStorage
+      const token = localStorage.getItem('access_token');
+      
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      };
+      
+      const response = await axios.put(`${API_BASE_URL}/files/directories/${id}/`, directory, { headers });
       return response.data;
     } catch (error) {
       console.error(`Error updating directory with id ${id}:`, error);
@@ -226,7 +250,15 @@ const directoryService = {
   // Ta bort ett directory
   deleteDirectory: async (id: number): Promise<boolean> => {
     try {
-      await axios.delete(`${API_BASE_URL}/files/directories/${id}/`);
+      // Hämta access token från localStorage
+      const token = localStorage.getItem('access_token');
+      
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      };
+      
+      await axios.delete(`${API_BASE_URL}/files/directories/${id}/`, { headers });
       return true;
     } catch (error) {
       console.error(`Error deleting directory with id ${id}:`, error);
